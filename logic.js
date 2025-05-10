@@ -592,7 +592,7 @@ _input.onchange = async (e) =>
 	_c_move_doc_right.classList.add('hidden');
 	multipage_help.classList.add('hidden');
 
-	// Reset
+	// Reset (doesnt have to happen, could be a optional button)
 	resetConsole();
 	resetFileBuffers();
 	resetPDFDocs();
@@ -654,6 +654,7 @@ _input.onchange = async (e) =>
 	}
 }
 
+// add optional compression
 async function action(split)
 {
 	// Abort nonsense

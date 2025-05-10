@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<title>PDF utils</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" href="style.css">
+		<script type="text/javascript" src="libs/pdf.min.js"></script>
+		<script type="text/javascript" src="libs/pdf-lib.min.js"></script>
+		<script type="text/javascript" src="logic.js" defer></script>
+	</head>
+	<body>
+		<textarea id="console" spellcheck="false"></textarea>
+		<main id="main">
+			<label id="input_label" for="input">
+				<input id="input" type="file" accept="application/pdf" multiple/>
+				Browse for PDFs...
+			</label>
+			<div id="config_container" class="hidden flex">
+				<button id="_c_preview_view">View</button>
+				<button id="action_button">Merge</button>
+			</div>
+		</main>
+		<div id="preview_container" class="popup_window hidden">
+			<div class="preview_title">
+				<div class="flex">
+					<button id="_c_move_doc_left">&leftarrow;</button>
+					<button id="_c_move_doc_right">&rightarrow;</button>
+				</div>
+				<button id="_c_preview_hide">X</button>
+			</div>
+			<div id="preview_canvas">
+				<canvas id="canvas"></canvas>
+			</div>
+			<div id="multipage_help" class="hidden">
+				<button id="multipage_prev">&larr;</button><span id="multipage_count">1</span><button id="multipage_next">&rarr;</button>
+			</div>
+		</div>
+	</body>
+</html>

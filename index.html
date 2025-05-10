@@ -12,20 +12,28 @@
 	<body>
 		<textarea id="console" spellcheck="false"></textarea>
 		<main id="main">
+			<h1>
+				Merge docs, rearrange docs
+			</h1>
 			<label id="input_label" for="input">
 				<input id="input" type="file" accept="application/pdf" multiple/>
 				Browse for PDFs...
 			</label>
 			<div id="config_container" class="hidden flex">
 				<button id="_c_preview_view">View</button>
-				<button id="action_button">Merge</button>
+				<button id="action_button_trim">Convert</button>
+				<button id="action_button_split">Convert split</button>
 			</div>
 		</main>
 		<div id="preview_container" class="popup_window hidden">
 			<div class="preview_title">
 				<div class="flex">
-					<button id="_c_move_doc_left">&leftarrow;</button>
-					<button id="_c_move_doc_right">&rightarrow;</button>
+					<button id="_c_wipe_docs" class="hidden">&#x2622;</button>
+					<button id="_c_restore_docs" class="hidden">&#x267A;</button>
+					<button id="_c_delete_page">&#x2715;</button>
+					<button id="_c_rotate_doc">&#x21bb;</button>
+					<button id="_c_move_doc_left" class="hidden">&leftarrow;</button>
+					<button id="_c_move_doc_right" class="hidden">&rightarrow;</button>
 				</div>
 				<button id="_c_preview_hide">X</button>
 			</div>

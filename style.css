@@ -9,6 +9,11 @@ body
 	padding: 0;
 	position: relative;
 }
+h1
+{
+	font-size: 1.8rem;
+	margin: 0 0 25px 0;
+}
 label
 {
 	font-family: 'Lucida Console', Monaco, monospace;

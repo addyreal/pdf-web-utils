@@ -1,22 +1,24 @@
 // DOM
 const main = document.getElementById('main');
 const _console = document.getElementById('console');
-const pdf_input = document.getElementById('input');
-const preview_container = document.getElementById('preview_container');
-const preview_canvas = document.getElementById('preview_canvas');
+const _input = document.getElementById('input');
+const config_container = document.getElementById('config_container');
 const _c_preview_view = document.getElementById('_c_preview_view');
 const _c_preview_hide = document.getElementById('_c_preview_hide');
-const _c_preview_wipe = document.getElementById('_c_preview_wipe');
-const _c_preview_reset = document.getElementById('_c_preview_reset');
-const _c_preview_delete = document.getElementById('_c_preview_delete');
+const _c_wipe_docs = document.getElementById('_c_wipe_docs');
+const _c_restore_docs = document.getElementById('_c_restore_docs');
+const _c_delete_page = document.getElementById('_c_delete_page');
+const _c_rotate_doc = document.getElementById('_c_rotate_doc');
 const _c_move_doc_left = document.getElementById('_c_move_doc_left');
 const _c_move_doc_right = document.getElementById('_c_move_doc_right');
-const config_container = document.getElementById('config_container');
+const preview_container = document.getElementById('preview_container');
+const preview_canvas = document.getElementById('preview_canvas');
 const multipage_help = document.getElementById('multipage_help');
 const multipage_prev = document.getElementById('multipage_prev');
 const multipage_next = document.getElementById('multipage_next');
 const multipage_count = document.getElementById('multipage_count');
-const action_button = document.getElementById('action_button');
+const action_button_trim = document.getElementById('action_button_trim');
+const action_button_split = document.getElementById('action_button_split');
 
 // -------------------- GLOBALS ----------------------------
 
@@ -28,6 +30,8 @@ var pageHelp =
 {
 	current: null,
 	total: null,
+	delete: [null],
+	rotate: [null],
 };
 var previewWindow =
 {
@@ -60,6 +64,8 @@ function resetPageHelp()
 	{
 		current: 1,
 		total: null,
+		delete: [],
+		rotate: [],
 	};
 }
 function resetPreviewWindow()
@@ -184,19 +190,45 @@ async function renderMoveWrap(i)
 	renderInProgress = false;
 }
 
+// Swap subarrays
+function swapRight(arr, i, j, l, k)
+{
+	const a = arr.slice(i, i + l);
+	const b = arr.slice(j, j + k);
+	arr.splice(i, l + k, ...b, ...a);
+}
+
 // Wrap for swapping documents
-async function renderSwapWrap(pos, i)
+async function renderSwapWrap(docpos, i)
 {
 	renderInProgress = true;
-	const tempFB = fileBuffers[pos];
-	const tempPD = PDFDocs[pos];
-	const tempNP = numPages[pos];
-	fileBuffers[pos] = fileBuffers[pos + i];
-	PDFDocs[pos] = PDFDocs[pos + i];
-	numPages[pos] = numPages[pos + i];
-	fileBuffers[pos + i] = tempFB;
-	PDFDocs[pos + i] = tempPD;
-	numPages[pos + i] = tempNP;
+	let pagepos = 0;
+	if(docpos != 0)
+	{
+		for(let j = 0; j < docpos; j++)
+		{
+			pagepos += numPages[j];
+		}
+	}
+	if(i == 1)
+	{
+		swapRight(pageHelp.rotate, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
+		swapRight(pageHelp.delete, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
+	}
+	else if(i == -1)
+	{
+		swapRight(pageHelp.rotate, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
+		swapRight(pageHelp.delete, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
+	}
+	const tempFB = fileBuffers[docpos];
+	const tempPD = PDFDocs[docpos];
+	const tempNP = numPages[docpos];
+	fileBuffers[docpos] = fileBuffers[docpos + i];
+	PDFDocs[docpos] = PDFDocs[docpos + i];
+	numPages[docpos] = numPages[docpos + i];
+	fileBuffers[docpos + i] = tempFB;
+	PDFDocs[docpos + i] = tempPD;
+	numPages[docpos + i] = tempNP;
 	await renderPDFPage(pageHelp.current);
 	draw();
 	updatePageCount();
@@ -236,12 +268,41 @@ const CONST_MOBILEZOOMFACTOR = 1.05;
 // Draw, vCanvas into canvas
 function draw()
 {
-	// draw pdf
+	// Apply pan and zoom
 	context.setTransform(1, 0, 0, 1, 0, 0);
 	context.clearRect(0, 0, canvas.width, canvas.height);
 	context.imageSmoothingEnabled = false;
 	context.setTransform(previewWindow.scale, 0, 0, previewWindow.scale, previewWindow.offsetX, previewWindow.offsetY);
+
+	// Apply rotation
+	if(pageHelp.rotate[pageHelp.current - 1] != 0)
+	{
+		context.translate(vCanvas.width / 2, vCanvas.height / 2);
+		context.rotate(pageHelp.rotate[pageHelp.current - 1] * Math.PI / 2);
+		context.translate(-1 * vCanvas.width / 2, -1 * vCanvas.height / 2);
+	}
+
+	// Draw pdf
 	context.drawImage(vCanvas, 0, 0);
+
+	// Draw removal
+	if(pageHelp.delete[pageHelp.current - 1] == 1)
+	{
+		context.strokeStyle = 'red';
+		context.lineWidth = 2;
+		context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+		context.fillRect(0, 0, vCanvas.width, vCanvas.height);
+
+		context.beginPath();
+		context.moveTo(0, 0);
+		context.lineTo(vCanvas.width, vCanvas.height);
+		context.stroke();
+
+		context.beginPath();
+		context.moveTo(vCanvas.width, 0);
+		context.lineTo(0, vCanvas.height);
+		context.stroke();
+	}
 }
 
 // Click
@@ -453,6 +514,44 @@ multipage_next.addEventListener('click', async function()
 	}
 });
 
+// Wipe all pages
+_c_wipe_docs.addEventListener('click', ()=>
+{
+	for(let i = 1; i <= pageHelp.total; i++)
+	{
+		pageHelp.delete[i - 1] = 1;
+	}
+
+	draw();
+})
+
+// Restore deletions
+_c_restore_docs.addEventListener('click', ()=>
+{
+	for(let i = 1; i <= pageHelp.total; i++)
+	{
+		pageHelp.delete[i - 1] = 0;
+	}
+
+	draw();
+})
+
+// Delete current page
+_c_delete_page.addEventListener('click', ()=>
+{
+	pageHelp.delete[pageHelp.current - 1] = pageHelp.delete[pageHelp.current - 1] == 0 ? 1 : 0;
+
+	draw();
+})
+
+// Rotate current page
+_c_rotate_doc.addEventListener('click', ()=>
+{
+	pageHelp.rotate[pageHelp.current - 1] = (pageHelp.rotate[pageHelp.current - 1] + 1) % 4;
+
+	draw();
+})
+
 // Move doc left
 _c_move_doc_left.addEventListener('click', async function()
 {
@@ -481,11 +580,16 @@ _c_move_doc_right.addEventListener('click', async function()
 
 // Input
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
-pdf_input.onchange = async (e) =>
+_input.onchange = async (e) =>
 {
 	// Hide
 	preview_container.classList.add('hidden');
 	config_container.classList.add('hidden');
+	_c_wipe_docs.classList.add('hidden');
+	_c_restore_docs.classList.add('hidden');
+	_c_delete_page.classList.add('hidden');
+	_c_move_doc_left.classList.add('hidden');
+	_c_move_doc_right.classList.add('hidden');
 	multipage_help.classList.add('hidden');
 
 	// Reset
@@ -497,14 +601,14 @@ pdf_input.onchange = async (e) =>
 	resetPreviewWindow();
 
 	// Get files
-    const files = e.target.files;
+	const files = e.target.files;
 	if(!files)
 	{
-		printConsole("Error: Received 0 files.");
+		printConsole("Error: Received 0 files.\n");
 	}
 	else if(files.length >= 20)
 	{
-		printConsole("Error: Received over 20 files.");
+		printConsole("Error: Received over 20 files.\n");
 	}
 
 	// Initialize
@@ -513,7 +617,7 @@ pdf_input.onchange = async (e) =>
 		// Assert format
 		if(files[i].type != "application/pdf")
 		{
-			printConsole("Error: Received a non-PDF file.");
+			printConsole("Error: Received a non-PDF file.\n");
 			return;
 		}
 
@@ -523,6 +627,11 @@ pdf_input.onchange = async (e) =>
 		PDFDocs.push(await pdfjsLib.getDocument({data: fileBuffer}).promise);
 		numPages.push(PDFDocs[i].numPages);
 		pageHelp.total += PDFDocs[i].numPages;
+		for(let j = 0; j < PDFDocs[i].numPages; j++)
+		{
+			pageHelp.rotate.push(0);
+			pageHelp.delete.push(0);
+		}
 	}
 
 	// Render 1st page
@@ -532,40 +641,137 @@ pdf_input.onchange = async (e) =>
 	config_container.classList.remove('hidden');
 	if(PDFDocs.length > 1 || numPages[0] > 1)
 	{
+		if(PDFDocs.length > 1)
+		{
+			_c_move_doc_left.classList.remove('hidden');
+			_c_move_doc_right.classList.remove('hidden');
+		}
+		_c_restore_docs.classList.remove('hidden');
+		_c_wipe_docs.classList.remove('hidden');
+		_c_delete_page.classList.remove('hidden');
 		multipage_help.classList.remove('hidden');
 		updatePageCount();
 	}
 }
 
-// Output
-action_button.addEventListener('click', function()
+async function action(split)
+{
+	// Abort nonsense
+	let r = 0;
+	let d = 0;
+	for(let i = 0; i < pageHelp.total; i++)
+	{
+		if(pageHelp.delete[i] != 0)
+		{
+			d++;
+		}
+		else if(pageHelp.rotate[i] != 0)
+		{
+			r++;
+		}
+	}
+	if(d == pageHelp.total)
+	{
+		printConsole("Aborting download of zero pages.\n");
+		return;
+	}
+	else if(d == 0 && r == 0)
+	{
+		if(split == false || ((split == true) && (fileBuffers.length == 1) && (numPages[0] == 1)))
+		{
+			printConsole("Aborting download of unchanged document.\n");
+			return;
+		}
+	}
+
+	// Load PDF
+	const {PDFDocument} = PDFLib;
+	const newDoc = await PDFDocument.create();
+
+	// Loop throgh all pages and rotate and copy
+	let pageIndex = 0;
+	for(let i = 0; i < fileBuffers.length; i++)
+	{
+		if(i != 0)
+		{
+			pageIndex += numPages[i - 1];
+		}
+		const pdf = await PDFDocument.load(fileBuffers[i]);
+		// Rotate
+		for(let j = 1; j <= numPages[i]; j++)
+		{
+			if(pageHelp.rotate[pageIndex + j - 1] != 0)
+			{
+				const pageToRotate = (pdf.getPages())[j - 1];
+				pageToRotate.setRotation(PDFLib.degrees(pageToRotate.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
+			}
+		}
+		const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());
+		copy.forEach((page) => newDoc.addPage(page));
+	}
+
+	// Loop through all pages and delete
+	pageIndex = fileBuffers.length - 1;
+	for(let i = fileBuffers.length - 1; i >= 0; i--)
+	{
+		if(i != fileBuffers.length - 1)
+		{
+			pageIndex -= numPages[i + 1];
+		}
+		// Delete or download
+		for(let j = 1; j <= numPages[i]; j++)
+		{	
+			if(split && pageHelp.delete[pageIndex - j + 1] == 0)
+			{
+				// Copy
+				const singlePage = await PDFDocument.create();
+				const [copy] = await singlePage.copyPages(newDoc, [pageIndex - j + 1]);
+				singlePage.addPage(copy);
+		
+				// Download
+				const pageBytes = await singlePage.save();
+				const blob = new Blob([pageBytes], {type: 'application/pdf'});
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = `converted-${pageIndex - j + 1}` + '.pdf';
+				link.click();
+				URL.revokeObjectURL(link.href);
+				continue;
+			}
+			if(pageHelp.delete[pageIndex - j + 1] == 1)
+			{
+				newDoc.removePage(pageIndex - j + 1);
+			}
+		}
+	}
+
+	// Download is done for split
+	if(split) return;
+
+	// Save
+	newBytes = await newDoc.save();
+
+	// Make bob
+	const bob = new Blob([newBytes], {type: 'application/pdf'});
+	const link = document.createElement('a');
+	link.href = URL.createObjectURL(bob);
+	link.download = 'merged' + '.pdf';
+	link.click();
+	URL.revokeObjectURL(link.href);
+}
+
+action_button_trim.addEventListener('click', async function()
 {
 	resetConsole();
 
-	(async() =>{
-		// Load PDF
-		const {PDFDocument} = PDFLib;
-		const newDoc = await PDFDocument.create();
+	action(false);
+});
 
-		// Copy page by page into a merged doc
-		for(let i = 0; i < fileBuffers.length; i++)
-		{
-			const pdf = await PDFDocument.load(fileBuffers[i]);
-			const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());
-			copy.forEach((page) => newDoc.addPage(page));
-		}
+action_button_split.addEventListener('click', async function()
+{
+	resetConsole();
 
-		// Save
-		newBytes = await newDoc.save();
-
-		// Make bob
-		const bob = new Blob([newBytes], {type: 'application/pdf'});
-		const link = document.createElement('a');
-		link.href = URL.createObjectURL(bob);
-		link.download = 'merged' + '.pdf';
-		link.click();
-		URL.revokeObjectURL(link.href);
-	})();
+	action(true);
 });
 
 // ---------------------------------------------------------

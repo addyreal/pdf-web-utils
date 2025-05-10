@@ -2,6 +2,7 @@
 const main = document.getElementById('main');
 const _console = document.getElementById('console');
 const _input = document.getElementById('input');
+const _c_highdpi = document.getElementById('_c_highdpi');
 const config_container = document.getElementById('config_container');
 const _c_preview_view = document.getElementById('_c_preview_view');
 const _c_preview_hide = document.getElementById('_c_preview_hide');
@@ -44,6 +45,24 @@ var previewWindow =
 	isDragging: null,
 	isTouchZooming: null,
 };
+var cropRect =
+{
+	x: 0,
+	y: 0,
+	w: 0,
+	h: 0,
+	lastX: 0,
+	lastY: 0,
+	offsetX: 0,
+	offsetY: 0,
+	vertex: 0,
+	dragging: false,
+};
+var cropArray = 
+{
+	saved: [{x: null, y: null, w: null, h: null,}],
+	sizes: [{pw: null, ph: null}],
+};
 
 // Resets
 function resetFileBuffers()
@@ -81,6 +100,67 @@ function resetPreviewWindow()
 		isDragging: false,
 		isTouchZooming: false,
 	};
+}
+function resetCurrentCrop(box)
+{
+	cropRect =
+	{
+		x: 0,
+		y: 0,
+		w: box.width - 1,
+		h: box.height - 1,
+		lastX: 0,
+		lastY: 0,
+		offsetX: 0,
+		offsetY: 0,
+		vertex: 0,
+		dragging: false,
+	};
+}
+function resetCropArray()
+{
+	cropArray = 
+	{
+		saved: [],
+		sizes: [],
+	};
+}
+
+// Crop saving
+function saveCurrentCrop(box)
+{
+	const arrIndex = pageHelp.current - 1;
+	const x = cropRect.x;
+	const y = cropRect.y;
+	const w = cropRect.w;
+	const h = cropRect.h;
+	cropArray.saved[arrIndex] = {x: x, y: y, w: w, h: h};
+	const pw = box.width - 1;
+	const ph = box.height - 1;
+	cropArray.sizes[arrIndex] = {pw: pw, ph: ph};
+}
+function restoreCurrentCrop(index, box)
+{
+	if(cropArray.saved[index - 1].w != 0)
+	{
+		cropRect =
+		{
+			x: cropArray.saved[index - 1].x,
+			y: cropArray.saved[index - 1].y,
+			w: cropArray.saved[index - 1].w,
+			h: cropArray.saved[index - 1].h,
+			lastX: 0,
+			lastY: 0,
+			offsetX: 0,
+			offsetY: 0,
+			vertex: 0,
+			dragging: false,
+		};
+	}
+	else
+	{
+		resetCurrentCrop(box);
+	}
 }
 
 // ---------------------------------------------------------
@@ -261,7 +341,8 @@ const vContext = vCanvas.getContext('2d');
 vContext.imageSmoothingEnabled = false;
 
 // Constants
-const CONST_DPI = 144;
+var CONST_DPI = 144;
+const CONST_CROPTHICKNESS = 1;
 const CONST_ZOOMFACTOR = 1.1;
 const CONST_MOBILEZOOMFACTOR = 1.05;
 
@@ -302,6 +383,23 @@ function draw()
 		context.moveTo(vCanvas.width, 0);
 		context.lineTo(0, vCanvas.height);
 		context.stroke();
+	}
+	// Else draw cropbox
+	else
+	{
+		const cropX = Math.round(cropRect.x) + CONST_CROPTHICKNESS/2;
+		const cropY = Math.round(cropRect.y) + CONST_CROPTHICKNESS/2;
+		const cropW = Math.round(cropRect.w);
+		const cropH = Math.round(cropRect.h);
+
+		context.save();
+		context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+		context.fillRect(cropX - CONST_CROPTHICKNESS/2, cropY - CONST_CROPTHICKNESS/2, cropW, cropH);
+		context.restore();
+
+		context.strokeStyle = 'rgba(255, 0, 0 , 0.6)';
+		context.lineWidth = CONST_CROPTHICKNESS;
+		context.strokeRect(cropX, cropY, cropW, cropH);
 	}
 }
 
@@ -482,6 +580,22 @@ canvas.addEventListener('touchcancel', ()=>
 
 // -------------------- OTHER LISTENERS --------------------
 
+// Enable highdpi render
+_c_highdpi.addEventListener('change', (e) =>
+{
+	if(e.target.checked)
+	{
+		CONST_DPI = 288;
+	}
+	else
+	{
+		CONST_DPI = 144;
+	}
+
+	// must force reupload, TODO: fix it
+	config_container.classList.add('hidden');
+});
+
 // View preview
 _c_preview_view.addEventListener('click', function()
 {
@@ -599,6 +713,7 @@ _input.onchange = async (e) =>
 	resetNumPages();
 	resetPageHelp();
 	resetPreviewWindow();
+	resetCropArray();
 
 	// Get files
 	const files = e.target.files;
@@ -636,6 +751,9 @@ _input.onchange = async (e) =>
 
 	// Render 1st page
 	await renderMoveWrap(0);
+
+	// Generate crop box
+	resetCurrentCrop(vCanvas);
 
 	// Enable UI
 	config_container.classList.remove('hidden');

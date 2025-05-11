@@ -35,6 +35,10 @@ canvas
 {
 	cursor: grabbing;
 }
+.notallowed
+{
+	cursor: not-allowed;
+}
 .flex
 {
 	display: flex;

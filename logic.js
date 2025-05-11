@@ -126,7 +126,7 @@ function resetCropArray()
 	};
 }
 
-// Crop saving
+// Utils
 function saveCurrentCrop(box)
 {
 	const arrIndex = pageHelp.current - 1;
@@ -161,12 +161,6 @@ function restoreCurrentCrop(index, box)
 	{
 		resetCurrentCrop(box);
 	}
-}
-
-function toPt(px)
-{
-	console.log(px * (72/CONST_DPI));
-	return px * (72/CONST_DPI);
 }
 
 // ---------------------------------------------------------
@@ -352,6 +346,7 @@ vContext.imageSmoothingEnabled = false;
 // Constants
 var CONST_DPI = 144;
 const CONST_CROPTHICKNESS = 1;
+const CONST_CROPSQUAREAREA = 16;
 const CONST_ZOOMFACTOR = 1.1;
 const CONST_MOBILEZOOMFACTOR = 1.05;
 
@@ -396,19 +391,28 @@ function draw()
 	// Else draw cropbox
 	else
 	{
-		const cropX = Math.round(cropRect.x) + CONST_CROPTHICKNESS/2;
-		const cropY = Math.round(cropRect.y) + CONST_CROPTHICKNESS/2;
+		const cropX = Math.round(cropRect.x);
+		const cropY = Math.round(cropRect.y);
 		const cropW = Math.round(cropRect.w);
 		const cropH = Math.round(cropRect.h);
 
+		if(pageHelp.rotate[pageHelp.current - 1] == 0)
+		{
+			context.fillStyle = 'red';
+			context.fillRect(cropX + 1 - CONST_CROPSQUAREAREA, cropY + 1 - CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
+			context.fillRect(cropX + 1 - CONST_CROPSQUAREAREA, cropY + cropH, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
+			context.fillRect(cropX + cropW, cropY + 1 - CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
+			context.fillRect(cropX + cropW, cropY + cropH, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
+		}
+
 		context.save();
 		context.fillStyle = 'rgba(0, 0, 0, 0.4)';
-		context.fillRect(cropX - CONST_CROPTHICKNESS/2, cropY - CONST_CROPTHICKNESS/2, cropW, cropH);
+		context.fillRect(cropX, cropY, cropW, cropH);
 		context.restore();
 
 		context.strokeStyle = 'rgba(255, 0, 0 , 0.6)';
 		context.lineWidth = CONST_CROPTHICKNESS;
-		context.strokeRect(cropX, cropY, cropW, cropH);
+		context.strokeRect(cropX + CONST_CROPTHICKNESS/2, cropY + CONST_CROPTHICKNESS/2, cropW, cropH);
 	}
 }
 
@@ -466,6 +470,7 @@ function end()
 	previewWindow.isDragging = false;
 	cropRect.dragging = false;
 	canvas.classList.remove('grabbing');
+	canvas.classList.remove('notallowed');
 }
 
 // Mobile
@@ -547,6 +552,10 @@ canvas.addEventListener('mousedown', (e)=>
 		mouseY >= cropY - previewWindow.scale - 10 &&
 		mouseY <= cropY + previewWindow.scale + 10)
 	{
+		if(pageHelp.rotate[pageHelp.current - 1] != 0)
+		{
+			return;
+		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -560,6 +569,10 @@ canvas.addEventListener('mousedown', (e)=>
 		mouseY >= cropY - previewWindow.scale - 10 &&
 		mouseY <= cropY + previewWindow.scale + 10)
 	{
+		if(pageHelp.rotate[pageHelp.current - 1] != 0)
+		{
+			return;
+		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -573,6 +586,10 @@ canvas.addEventListener('mousedown', (e)=>
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
 		mouseY <= cropY + cropH + previewWindow.scale + 10)
 	{
+		if(pageHelp.rotate[pageHelp.current - 1] != 0)
+		{
+			return;
+		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -586,6 +603,10 @@ canvas.addEventListener('mousedown', (e)=>
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
 		mouseY <= cropY + cropH + previewWindow.scale + 10)
 	{
+		if(pageHelp.rotate[pageHelp.current - 1] != 0)
+		{
+			return;
+		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -682,6 +703,10 @@ canvas.addEventListener('touchstart', function(e)
 			touchY >= cropY - previewWindow.scale - 20 &&
 			touchY <= cropY + previewWindow.scale + 20)
 		{
+			if(pageHelp.rotate[pageHelp.current - 1] != 0)
+			{
+				return;
+			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -695,6 +720,10 @@ canvas.addEventListener('touchstart', function(e)
 			touchY >= cropY - previewWindow.scale - 20 &&
 			touchY <= cropY + previewWindow.scale + 20)
 		{
+			if(pageHelp.rotate[pageHelp.current - 1] != 0)
+			{
+				return;
+			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -708,6 +737,10 @@ canvas.addEventListener('touchstart', function(e)
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
 			touchY <= cropY + cropH + previewWindow.scale + 20)
 		{
+			if(pageHelp.rotate[pageHelp.current - 1] != 0)
+			{
+				return;
+			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -721,6 +754,10 @@ canvas.addEventListener('touchstart', function(e)
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
 			touchY <= cropY + cropH + previewWindow.scale + 20)
 		{
+			if(pageHelp.rotate[pageHelp.current - 1] != 0)
+			{
+				return;
+			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -1006,6 +1043,12 @@ _input.onchange = async (e) =>
 	}
 }
 
+// Util
+function toPt(px)
+{
+	return px * (72/CONST_DPI);
+}
+
 // add optional compression
 async function action(split)
 {
@@ -1025,7 +1068,7 @@ async function action(split)
 	}
 	if(d == pageHelp.total)
 	{
-		printConsole("Aborting download of zero pages.\n");
+		printConsole("Error: Aborting download of zero pages.\n");
 		return;
 	}
 
@@ -1057,8 +1100,11 @@ async function action(split)
 				const c = Math.round(savedCrop.w);
 				const d = Math.round(savedCrop.h);
 				const prevCB = page.getCropBox();
-				page.setCropBox(toPt(a) + prevCB.x, toPt(b) + prevCB.y, toPt(c), toPt(d));
-				printConsole("Info: Applied a crop to page " + (pageIndex + j) + ", with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
+				if(a != 0 || b != 0 || c != width || d != height)
+				{
+					page.setCropBox(toPt(a) + prevCB.x, toPt(b) + prevCB.y, toPt(c), toPt(d));
+					printConsole("Done: Applied a crop to page " + (pageIndex + j) + ", with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
+				}
 				if(prevCB.x != 0 || prevCB.y != 0 || Math.round(prevCB.width) != toPt(c) || Math.round(prevCB.height) != toPt(d))
 				{
 					printConsole("Info: Page " + (pageIndex + j) + " had a cropbox prior to addition.\n");
@@ -1067,6 +1113,7 @@ async function action(split)
 			if(pageHelp.rotate[pageIndex + j - 1] != 0)
 			{
 				page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
+				printConsole("Done: Applied a rotation to page " + (pageIndex + j) + ", with angle " + (pageHelp.rotate[pageIndex + j - 1]) * 90 + "° clockwise.\n");
 			}
 		}
 		const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());
@@ -1074,7 +1121,7 @@ async function action(split)
 	}
 
 	// Loop through all pages and delete
-	pageIndex = fileBuffers.length - 1;
+	pageIndex = pageHelp.total - 1;
 	for(let i = fileBuffers.length - 1; i >= 0; i--)
 	{
 		if(i != fileBuffers.length - 1)
@@ -1083,7 +1130,7 @@ async function action(split)
 		}
 		// Delete or download
 		for(let j = 1; j <= numPages[i]; j++)
-		{	
+		{
 			if(split && pageHelp.delete[pageIndex - j + 1] == 0)
 			{
 				// Copy
@@ -1104,6 +1151,7 @@ async function action(split)
 			if(pageHelp.delete[pageIndex - j + 1] == 1)
 			{
 				newDoc.removePage(pageIndex - j + 1);
+				printConsole("Done: Deleted page " + (pageIndex - j + 2) + ".\n");
 			}
 		}
 	}

@@ -163,6 +163,12 @@ function restoreCurrentCrop(index, box)
 	}
 }
 
+function toPt(px)
+{
+	console.log(px * (72/CONST_DPI));
+	return px * (72/CONST_DPI);
+}
+
 // ---------------------------------------------------------
 
 // -------------------- MULTIDOC ---------------------------
@@ -263,8 +269,10 @@ async function renderPDFPage(i)
 async function renderMoveWrap(i)
 {
 	renderInProgress = true;
+	saveCurrentCrop(vCanvas);
 	pageHelp.current += i;
 	await renderPDFPage(pageHelp.current);
+	restoreCurrentCrop(pageHelp.current, vCanvas);
 	draw();
 	if(i != 0) updatePageCount();
 	renderInProgress = false;
@@ -320,6 +328,7 @@ async function renderSwapWrap(docpos, i)
 function printConsole(text)
 {
 	_console.value += text;
+	_console.scrollTop = _console.scrollHeight;
 }
 function resetConsole()
 {
@@ -455,6 +464,7 @@ function zoom(e)
 function end()
 {
 	previewWindow.isDragging = false;
+	cropRect.dragging = false;
 	canvas.classList.remove('grabbing');
 }
 
@@ -475,6 +485,7 @@ function getTouchesY(touch1, touch2)
 }
 function mobileStartZoom(touch1, touch2)
 {
+	cropRect.dragging = false;
 	previewWindow.isDragging = false;
 	previewWindow.isTouchZooming = true;
 	previewWindow.lastTouchesDist = getTouchesDist(touch1, touch2);
@@ -521,12 +532,122 @@ canvas.addEventListener('wheel', (e)=>
 canvas.addEventListener('mousedown', (e)=>
 {
 	canvas.classList.add('grabbing');
-	press(e.clientX, e.clientY);
+	const rect = canvas.getBoundingClientRect();
+	const mouseX = e.clientX - rect.left;
+	const mouseY = e.clientY - rect.top;
+
+	// Vertex grabbing
+	const cropX = cropRect.x * previewWindow.scale + previewWindow.offsetX;
+	const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
+	const cropW = cropRect.w * previewWindow.scale;
+	const cropH = cropRect.h * previewWindow.scale;
+	if(
+		mouseX >= cropX - previewWindow.scale - 10 &&
+		mouseX <= cropX + previewWindow.scale + 10 &&
+		mouseY >= cropY - previewWindow.scale - 10 &&
+		mouseY <= cropY + previewWindow.scale + 10)
+	{
+		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
+		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
+		cropRect.offsetX = 0;
+		cropRect.offsetY = 0;
+		cropRect.vertex = 0;
+		cropRect.dragging = true;
+	}
+	else if(
+		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
+		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
+		mouseY >= cropY - previewWindow.scale - 10 &&
+		mouseY <= cropY + previewWindow.scale + 10)
+	{
+		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
+		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
+		cropRect.offsetX = 0;
+		cropRect.offsetY = 0;
+		cropRect.vertex = 1;
+		cropRect.dragging = true;
+	}
+	else if(
+		mouseX >= cropX - previewWindow.scale - 10 &&
+		mouseX <= cropX + previewWindow.scale + 10 &&
+		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
+		mouseY <= cropY + cropH + previewWindow.scale + 10)
+	{
+		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
+		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
+		cropRect.offsetX = 0;
+		cropRect.offsetY = 0;
+		cropRect.vertex = 2;
+		cropRect.dragging = true;
+	}
+	else if(
+		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
+		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
+		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
+		mouseY <= cropY + cropH + previewWindow.scale + 10)
+	{
+		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
+		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
+		cropRect.offsetX = 0;
+		cropRect.offsetY = 0;
+		cropRect.vertex = 3;
+		cropRect.dragging = true;
+	}
+	// Other grabbing (panning)
+	else
+	{
+		press(e.clientX, e.clientY);
+	}
 });
 canvas.addEventListener('mousemove', (e)=>
 {
 	e.preventDefault();
-	move(e.clientX, e.clientY);
+	const rect = canvas.getBoundingClientRect();
+	const mouseX = e.clientX - rect.left;
+	const mouseY = e.clientY - rect.top;
+
+	// Vertex grabbing
+	if(cropRect.dragging == true)
+	{
+		const newX = (mouseX - cropRect.offsetX - previewWindow.offsetX) / previewWindow.scale;
+		const newY = (mouseY - cropRect.offsetY - previewWindow.offsetY) / previewWindow.scale;
+		let dx = newX - cropRect.lastX;
+		let dy = newY - cropRect.lastY;
+
+		switch(cropRect.vertex)
+		{
+			case 0:
+				cropRect.x += dx;
+				cropRect.y += dy;
+				cropRect.w -= dx;
+				cropRect.h -= dy;
+				break;
+			case 1:
+				cropRect.y += dy;
+				cropRect.w += dx;
+				cropRect.h -= dy;
+				break;
+			case 2:
+				cropRect.x += dx;
+				cropRect.w -= dx;
+				cropRect.h += dy;
+				break;
+			case 3:
+				cropRect.w += dx;
+				cropRect.h += dy;
+				break;
+		}
+
+		cropRect.lastX = newX;
+		cropRect.lastY = newY;
+
+		draw();
+	}
+	// Maybe other grabbing (panning)
+	else
+	{
+		move(e.clientX, e.clientY);
+	}
 });
 canvas.addEventListener('mouseup', ()=>
 {
@@ -546,7 +667,72 @@ canvas.addEventListener('touchstart', function(e)
 	e.preventDefault();
 	if(e.touches.length == 1)
 	{
-		press(e.touches[0].clientX, e.touches[0].clientY);
+		const rect = canvas.getBoundingClientRect();
+		const touchX = e.touches[0].clientX - rect.left;
+		const touchY = e.touches[0].clientY - rect.top;
+
+		// Vertex grabbing
+		const cropX = cropRect.x * previewWindow.scale + previewWindow.offsetX;
+		const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
+		const cropW = cropRect.w * previewWindow.scale;
+		const cropH = cropRect.h * previewWindow.scale;
+		if(
+			touchX >= cropX - previewWindow.scale - 20 &&
+			touchX <= cropX + previewWindow.scale + 20 &&
+			touchY >= cropY - previewWindow.scale - 20 &&
+			touchY <= cropY + previewWindow.scale + 20)
+		{
+			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
+			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
+			cropRect.offsetX = 0;
+			cropRect.offsetY = 0;
+			cropRect.vertex = 0;
+			cropRect.dragging = true;
+		}
+		else if(
+			touchX >= cropX + cropW - previewWindow.scale - 20 &&
+			touchX <= cropX + cropW + previewWindow.scale + 20 &&
+			touchY >= cropY - previewWindow.scale - 20 &&
+			touchY <= cropY + previewWindow.scale + 20)
+		{
+			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
+			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
+			cropRect.offsetX = 0;
+			cropRect.offsetY = 0;
+			cropRect.vertex = 1;
+			cropRect.dragging = true;
+		}
+		else if(
+			touchX >= cropX - previewWindow.scale - 20 &&
+			touchX <= cropX + previewWindow.scale + 20 &&
+			touchY >= cropY + cropH - previewWindow.scale - 20 &&
+			touchY <= cropY + cropH + previewWindow.scale + 20)
+		{
+			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
+			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
+			cropRect.offsetX = 0;
+			cropRect.offsetY = 0;
+			cropRect.vertex = 2;
+			cropRect.dragging = true;
+		}
+		else if(
+			touchX >= cropX + cropW - previewWindow.scale - 20 &&
+			touchX <= cropX + cropW + previewWindow.scale + 20 &&
+			touchY >= cropY + cropH - previewWindow.scale - 20 &&
+			touchY <= cropY + cropH + previewWindow.scale + 20)
+		{
+			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
+			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
+			cropRect.offsetX = 0;
+			cropRect.offsetY = 0;
+			cropRect.vertex = 3;
+			cropRect.dragging = true;
+		}
+		// Other grabbing (panning)
+		else
+		{
+			press(e.touches[0].clientX, e.touches[0].clientY);
+		}
 	}
 	else if(e.touches.length == 2)
 	{
@@ -558,7 +744,51 @@ canvas.addEventListener('touchmove', function(e)
 	e.preventDefault();
 	if(e.touches.length == 1)
 	{
-		move(e.touches[0].clientX, e.touches[0].clientY);
+		// Vertex grabbing
+		if(cropRect.dragging == true)
+		{
+			const rect = canvas.getBoundingClientRect();
+			const touchX = e.touches[0].clientX - rect.left;
+			const touchY = e.touches[0].clientY - rect.top;
+			const newX = (touchX - cropRect.offsetX - previewWindow.offsetX) / previewWindow.scale;
+			const newY = (touchY - cropRect.offsetY - previewWindow.offsetY) / previewWindow.scale;
+			let dx = newX - cropRect.lastX;
+			let dy = newY - cropRect.lastY;
+	
+			switch(cropRect.vertex)
+			{
+				case 0:
+					cropRect.x += dx;
+					cropRect.y += dy;
+					cropRect.w -= dx;
+					cropRect.h -= dy;
+					break;
+				case 1:
+					cropRect.y += dy;
+					cropRect.w += dx;
+					cropRect.h -= dy;
+					break;
+				case 2:
+					cropRect.x += dx;
+					cropRect.w -= dx;
+					cropRect.h += dy;
+					break;
+				case 3:
+					cropRect.w += dx;
+					cropRect.h += dy;
+					break;
+			}
+	
+			cropRect.lastX = newX;
+			cropRect.lastY = newY;
+	
+			draw();
+		}
+		// Maybe other grabbing (panning)
+		else
+		{
+			move(e.touches[0].clientX, e.touches[0].clientY);
+		}
 	}
 	else if(e.touches.length == 2)
 	{
@@ -606,6 +836,7 @@ _c_preview_view.addEventListener('click', function()
 // Hide preview
 _c_preview_hide.addEventListener('click', function()
 {
+	saveCurrentCrop(vCanvas);
 	preview_container.classList.toggle('hidden');
 	main.classList.toggle('blurred');
 });
@@ -746,6 +977,8 @@ _input.onchange = async (e) =>
 		{
 			pageHelp.rotate.push(0);
 			pageHelp.delete.push(0);
+			cropArray.saved.push({x: 0, y: 0, w: 0, h: 0});
+			cropArray.sizes.push({pw: 0, ph: 0});
 		}
 	}
 
@@ -754,6 +987,7 @@ _input.onchange = async (e) =>
 
 	// Generate crop box
 	resetCurrentCrop(vCanvas);
+	draw();
 
 	// Enable UI
 	config_container.classList.remove('hidden');
@@ -794,14 +1028,6 @@ async function action(split)
 		printConsole("Aborting download of zero pages.\n");
 		return;
 	}
-	else if(d == 0 && r == 0)
-	{
-		if(split == false || ((split == true) && (fileBuffers.length == 1) && (numPages[0] == 1)))
-		{
-			printConsole("Aborting download of unchanged document.\n");
-			return;
-		}
-	}
 
 	// Load PDF
 	const {PDFDocument} = PDFLib;
@@ -819,10 +1045,28 @@ async function action(split)
 		// Rotate
 		for(let j = 1; j <= numPages[i]; j++)
 		{
+			const page = (pdf.getPages())[j - 1];
+			// Nonzero crop
+			if(cropArray.saved[pageIndex + j - 1].w != 0 && cropArray.saved[pageIndex + j - 1].h != 0)
+			{
+				const savedCrop = cropArray.saved[pageIndex + j - 1];
+				const width = cropArray.sizes[pageIndex + j - 1].pw;
+				const height = cropArray.sizes[pageIndex + j - 1].ph;
+				const a = Math.round(savedCrop.x);
+				const b = height - Math.round(savedCrop.h) - Math.round(savedCrop.y);
+				const c = Math.round(savedCrop.w);
+				const d = Math.round(savedCrop.h);
+				const prevCB = page.getCropBox();
+				page.setCropBox(toPt(a) + prevCB.x, toPt(b) + prevCB.y, toPt(c), toPt(d));
+				printConsole("Info: Applied a crop to page " + (pageIndex + j) + ", with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
+				if(prevCB.x != 0 || prevCB.y != 0 || Math.round(prevCB.width) != toPt(c) || Math.round(prevCB.height) != toPt(d))
+				{
+					printConsole("Info: Page " + (pageIndex + j) + " had a cropbox prior to addition.\n");
+				}
+			}
 			if(pageHelp.rotate[pageIndex + j - 1] != 0)
 			{
-				const pageToRotate = (pdf.getPages())[j - 1];
-				pageToRotate.setRotation(PDFLib.degrees(pageToRotate.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
+				page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
 			}
 		}
 		const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());

@@ -1090,7 +1090,7 @@ _input.onchange = async (e) =>
 		_c_wipe_pages.classList.remove('hidden');
 		_c_delete_page.classList.remove('hidden');
 		multipage_help.classList.remove('hidden');
-		_c_split_label.classList.add('hidden');
+		_c_split_label.classList.remove('hidden');
 		updatePageCount();
 	}
 }

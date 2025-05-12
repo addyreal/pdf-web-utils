@@ -867,7 +867,7 @@ _c_highdpi.addEventListener('change', (e) =>
 		CONST_DPI = 144;
 	}
 
-	// must force reupload, TODO: fix it
+	// Force reupload, pixel data is up/down-scaled
 	config_container.classList.add('hidden');
 });
 
@@ -968,6 +968,36 @@ _c_move_doc_right.addEventListener('click', async function()
 
 // -------------------- LOGIC ------------------------------
 
+// Drag and drop overlay
+_input.addEventListener('drop', (e) =>
+{
+	e.preventDefault();
+	const files = e.dataTransfer.files;
+
+	// Validate the drop
+	if(!files || files.length === 0)
+	{
+		return;
+	}
+	else if(files.length >= 20)
+	{
+		printConsole("Error: Received over 20 files.\n");
+		return;
+	}
+
+	// Transfer files to normal flow
+	const dataTransfer = new DataTransfer();
+	for(let i = 0; i < files.length; i++)
+	{
+		if(files[i].type == "application/pdf")
+		{
+			dataTransfer.items.add(files[i]);
+		}
+	}
+	_input.files = dataTransfer.files;
+	_input.dispatchEvent(new Event('change'));
+});
+
 // Input
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
 _input.onchange = async (e) =>
@@ -983,7 +1013,7 @@ _input.onchange = async (e) =>
 	_c_split_label.classList.add('hidden');
 	multipage_help.classList.add('hidden');
 
-	// Reset (doesnt have to happen, could be a optional button)
+	// Reset (starting all over)
 	resetConsole();
 	resetFileBuffers();
 	resetPDFDocs();
@@ -994,13 +1024,15 @@ _input.onchange = async (e) =>
 
 	// Get files
 	const files = e.target.files;
-	if(!files)
+	if(!files || files.length === 0)
 	{
 		printConsole("Error: Received 0 files.\n");
+		return;
 	}
 	else if(files.length >= 20)
 	{
 		printConsole("Error: Received over 20 files.\n");
+		return;
 	}
 
 	// Initialize
@@ -1059,7 +1091,7 @@ function toPt(px)
 	return px * (72/CONST_DPI);
 }
 
-// add optional compression
+// Convert
 async function action(split)
 {
 	// Abort nonsense

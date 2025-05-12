@@ -6,10 +6,11 @@ const _c_highdpi = document.getElementById('_c_highdpi');
 const config_container = document.getElementById('config_container');
 const _c_preview_view = document.getElementById('_c_preview_view');
 const _c_preview_hide = document.getElementById('_c_preview_hide');
-const _c_wipe_docs = document.getElementById('_c_wipe_docs');
-const _c_restore_docs = document.getElementById('_c_restore_docs');
+const _c_wipe_pages = document.getElementById('_c_wipe_pages');
+const _c_restore_pages = document.getElementById('_c_restore_pages');
 const _c_delete_page = document.getElementById('_c_delete_page');
-const _c_rotate_doc = document.getElementById('_c_rotate_doc');
+const _c_crop_page = document.getElementById('_c_crop_page');
+const _c_rotate_page = document.getElementById('_c_rotate_page');
 const _c_move_doc_left = document.getElementById('_c_move_doc_left');
 const _c_move_doc_right = document.getElementById('_c_move_doc_right');
 const preview_container = document.getElementById('preview_container');
@@ -21,11 +22,13 @@ const multipage_count = document.getElementById('multipage_count');
 const _c_split_label = document.getElementById('_c_split_label');
 const _c_split = document.getElementById('_c_split');
 const action_button = document.getElementById('action_button');
+const bottom_info = document.getElementById('bottom_info');
 
 // -------------------- GLOBALS ----------------------------
 
 // Structs
 var split = false;
+var isCropping = false;
 var fileBuffers = [null];
 var PDFDocs = [null];
 var numPages = [null];
@@ -252,8 +255,8 @@ async function renderPDFPage(i)
 
 	// Set up canvases
 	const viewport = page.getViewport({scale: CONST_DPI/72});
-	canvas.width = viewport.width >= 600 ? 600 : viewport.width;
-	canvas.height = viewport.height >= 600 ? 600: viewport.height;
+	canvas.width = viewport.width >= 800 ? 800 : viewport.width;
+	canvas.height = viewport.height >= 800 ? 800: viewport.height;
 	vCanvas.width = viewport.width;
 	vCanvas.height = viewport.height;
 
@@ -369,7 +372,7 @@ function draw()
 	context.setTransform(previewWindow.scale, 0, 0, previewWindow.scale, previewWindow.offsetX, previewWindow.offsetY);
 
 	// Apply rotation
-	if(pageHelp.rotate[pageHelp.current - 1] != 0)
+	if(pageHelp.rotate[pageHelp.current - 1] != 0 && isCropping == false)
 	{
 		context.translate(vCanvas.width / 2, vCanvas.height / 2);
 		context.rotate(pageHelp.rotate[pageHelp.current - 1] * Math.PI / 2);
@@ -405,7 +408,7 @@ function draw()
 		const cropW = Math.round(cropRect.w);
 		const cropH = Math.round(cropRect.h);
 
-		if(pageHelp.rotate[pageHelp.current - 1] == 0)
+		if(isCropping == true)
 		{
 			context.fillStyle = 'red';
 			context.fillRect(cropX + 1 - CONST_CROPSQUAREAREA, cropY + 1 - CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
@@ -415,7 +418,7 @@ function draw()
 		}
 
 		context.save();
-		context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+		context.fillStyle = 'rgba(0, 0, 0, 0.25)';
 		context.fillRect(cropX, cropY, cropW, cropH);
 		context.restore();
 
@@ -554,16 +557,12 @@ canvas.addEventListener('mousedown', (e)=>
 	const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
 	const cropW = cropRect.w * previewWindow.scale;
 	const cropH = cropRect.h * previewWindow.scale;
-	if(
+	if(isCropping == true &&
 		mouseX >= cropX - previewWindow.scale - 10 &&
 		mouseX <= cropX + previewWindow.scale + 10 &&
 		mouseY >= cropY - previewWindow.scale - 10 &&
 		mouseY <= cropY + previewWindow.scale + 10)
 	{
-		if(pageHelp.rotate[pageHelp.current - 1] != 0)
-		{
-			return;
-		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -571,16 +570,12 @@ canvas.addEventListener('mousedown', (e)=>
 		cropRect.vertex = 0;
 		cropRect.dragging = true;
 	}
-	else if(
+	else if(isCropping == true &&
 		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
 		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
 		mouseY >= cropY - previewWindow.scale - 10 &&
 		mouseY <= cropY + previewWindow.scale + 10)
 	{
-		if(pageHelp.rotate[pageHelp.current - 1] != 0)
-		{
-			return;
-		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -588,16 +583,12 @@ canvas.addEventListener('mousedown', (e)=>
 		cropRect.vertex = 1;
 		cropRect.dragging = true;
 	}
-	else if(
+	else if(isCropping == true &&
 		mouseX >= cropX - previewWindow.scale - 10 &&
 		mouseX <= cropX + previewWindow.scale + 10 &&
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
 		mouseY <= cropY + cropH + previewWindow.scale + 10)
 	{
-		if(pageHelp.rotate[pageHelp.current - 1] != 0)
-		{
-			return;
-		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -605,16 +596,12 @@ canvas.addEventListener('mousedown', (e)=>
 		cropRect.vertex = 2;
 		cropRect.dragging = true;
 	}
-	else if(
+	else if(isCropping == true &&
 		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
 		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
 		mouseY <= cropY + cropH + previewWindow.scale + 10)
 	{
-		if(pageHelp.rotate[pageHelp.current - 1] != 0)
-		{
-			return;
-		}
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
@@ -705,16 +692,12 @@ canvas.addEventListener('touchstart', function(e)
 		const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
 		const cropW = cropRect.w * previewWindow.scale;
 		const cropH = cropRect.h * previewWindow.scale;
-		if(
+		if(isCropping == true &&
 			touchX >= cropX - previewWindow.scale - 20 &&
 			touchX <= cropX + previewWindow.scale + 20 &&
 			touchY >= cropY - previewWindow.scale - 20 &&
 			touchY <= cropY + previewWindow.scale + 20)
 		{
-			if(pageHelp.rotate[pageHelp.current - 1] != 0)
-			{
-				return;
-			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -722,16 +705,12 @@ canvas.addEventListener('touchstart', function(e)
 			cropRect.vertex = 0;
 			cropRect.dragging = true;
 		}
-		else if(
+		else if(isCropping == true &&
 			touchX >= cropX + cropW - previewWindow.scale - 20 &&
 			touchX <= cropX + cropW + previewWindow.scale + 20 &&
 			touchY >= cropY - previewWindow.scale - 20 &&
 			touchY <= cropY + previewWindow.scale + 20)
 		{
-			if(pageHelp.rotate[pageHelp.current - 1] != 0)
-			{
-				return;
-			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -739,16 +718,12 @@ canvas.addEventListener('touchstart', function(e)
 			cropRect.vertex = 1;
 			cropRect.dragging = true;
 		}
-		else if(
+		else if(isCropping == true &&
 			touchX >= cropX - previewWindow.scale - 20 &&
 			touchX <= cropX + previewWindow.scale + 20 &&
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
 			touchY <= cropY + cropH + previewWindow.scale + 20)
 		{
-			if(pageHelp.rotate[pageHelp.current - 1] != 0)
-			{
-				return;
-			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -756,16 +731,12 @@ canvas.addEventListener('touchstart', function(e)
 			cropRect.vertex = 2;
 			cropRect.dragging = true;
 		}
-		else if(
+		else if(isCropping == true &&
 			touchX >= cropX + cropW - previewWindow.scale - 20 &&
 			touchX <= cropX + cropW + previewWindow.scale + 20 &&
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
 			touchY <= cropY + cropH + previewWindow.scale + 20)
 		{
-			if(pageHelp.rotate[pageHelp.current - 1] != 0)
-			{
-				return;
-			}
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
@@ -876,19 +847,23 @@ _c_preview_view.addEventListener('click', function()
 {
 	preview_container.classList.toggle('hidden');
 	main.classList.toggle('blurred');
+	bottom_info.classList.toggle('blurred');
 });
 
 // Hide preview
 _c_preview_hide.addEventListener('click', function()
 {
+	if(isCropping == true) return;
 	saveCurrentCrop(vCanvas);
 	preview_container.classList.toggle('hidden');
 	main.classList.toggle('blurred');
+	bottom_info.classList.toggle('blurred');
 });
 
 // Multipage previous page
 multipage_prev.addEventListener('click', async function()
 {
+	if(isCropping == true) return;
 	if(pageHelp.current != 1 && !renderInProgress)
 	{
 		await renderMoveWrap(-1);
@@ -898,6 +873,7 @@ multipage_prev.addEventListener('click', async function()
 // Multipage next page
 multipage_next.addEventListener('click', async function()
 {
+	if(isCropping == true) return;
 	if(pageHelp.current != pageHelp.total && !renderInProgress)
 	{
 		await renderMoveWrap(1);
@@ -905,8 +881,9 @@ multipage_next.addEventListener('click', async function()
 });
 
 // Wipe all pages
-_c_wipe_docs.addEventListener('click', ()=>
+_c_wipe_pages.addEventListener('click', ()=>
 {
+	if(isCropping == true) return;
 	for(let i = 1; i <= pageHelp.total; i++)
 	{
 		pageHelp.delete[i - 1] = 1;
@@ -916,8 +893,9 @@ _c_wipe_docs.addEventListener('click', ()=>
 })
 
 // Restore deletions
-_c_restore_docs.addEventListener('click', ()=>
+_c_restore_pages.addEventListener('click', ()=>
 {
+	if(isCropping == true) return;
 	for(let i = 1; i <= pageHelp.total; i++)
 	{
 		pageHelp.delete[i - 1] = 0;
@@ -929,14 +907,44 @@ _c_restore_docs.addEventListener('click', ()=>
 // Delete current page
 _c_delete_page.addEventListener('click', ()=>
 {
+	if(isCropping == true) return;
 	pageHelp.delete[pageHelp.current - 1] = pageHelp.delete[pageHelp.current - 1] == 0 ? 1 : 0;
 
 	draw();
 })
 
-// Rotate current page
-_c_rotate_doc.addEventListener('click', ()=>
+// Disable other functionality while cropping (why not)
+function hideWhenCropping()
 {
+	_c_preview_hide.classList.toggle('notallowed');
+	multipage_prev.classList.toggle('notallowed');
+	multipage_next.classList.toggle('notallowed');
+	_c_wipe_pages.classList.toggle('notallowed');
+	_c_delete_page.classList.toggle('notallowed');
+	_c_restore_pages.classList.toggle('notallowed');
+	_c_rotate_page.classList.toggle('notallowed');
+	_c_move_doc_left.classList.toggle('notallowed');
+	_c_move_doc_right.classList.toggle('notallowed');
+}
+
+// Toggle cropping
+_c_crop_page.addEventListener('click', ()=>
+{
+	// Dont start cropping when page is deleted
+	if(pageHelp.delete[pageHelp.current - 1] == 1) return;
+	// Toggle
+	isCropping = isCropping == true ? false : true;
+	_c_crop_page.classList.toggle('bg-gray');
+	canvas.classList.toggle('crosshair');
+	hideWhenCropping()
+	// Redraw
+	draw();
+})
+
+// Rotate current page
+_c_rotate_page.addEventListener('click', ()=>
+{
+	if(isCropping == true) return;
 	pageHelp.rotate[pageHelp.current - 1] = (pageHelp.rotate[pageHelp.current - 1] + 1) % 4;
 
 	draw();
@@ -945,6 +953,7 @@ _c_rotate_doc.addEventListener('click', ()=>
 // Move doc left
 _c_move_doc_left.addEventListener('click', async function()
 {
+	if(isCropping == true) return;
 	let curr_doc_num = whatDoc(pageHelp.current);
 	if(curr_doc_num != 0 && !renderInProgress)
 	{
@@ -955,6 +964,7 @@ _c_move_doc_left.addEventListener('click', async function()
 // Move doc right
 _c_move_doc_right.addEventListener('click', async function()
 {
+	if(isCropping == true) return;
 	let curr_doc_num = whatDoc(pageHelp.current);
 	if(curr_doc_num != PDFDocs.length - 1 && !renderInProgress)
 	{
@@ -1005,8 +1015,8 @@ _input.onchange = async (e) =>
 	// Hide
 	preview_container.classList.add('hidden');
 	config_container.classList.add('hidden');
-	_c_wipe_docs.classList.add('hidden');
-	_c_restore_docs.classList.add('hidden');
+	_c_wipe_pages.classList.add('hidden');
+	_c_restore_pages.classList.add('hidden');
 	_c_delete_page.classList.add('hidden');
 	_c_move_doc_left.classList.add('hidden');
 	_c_move_doc_right.classList.add('hidden');
@@ -1076,8 +1086,8 @@ _input.onchange = async (e) =>
 			_c_move_doc_left.classList.remove('hidden');
 			_c_move_doc_right.classList.remove('hidden');
 		}
-		_c_restore_docs.classList.remove('hidden');
-		_c_wipe_docs.classList.remove('hidden');
+		_c_restore_pages.classList.remove('hidden');
+		_c_wipe_pages.classList.remove('hidden');
 		_c_delete_page.classList.remove('hidden');
 		multipage_help.classList.remove('hidden');
 		_c_split_label.classList.add('hidden');

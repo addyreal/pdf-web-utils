@@ -38,20 +38,23 @@
 		<div id="preview_container" class="popup_window hidden">
 			<div class="preview_title flex sb">
 				<div class="flex">
-					<button id="_c_wipe_docs" class="hidden">&#x2622;</button>
-					<button id="_c_delete_page">&#x2715;</button>
-					<button id="_c_restore_docs" class="hidden">&#x267A;</button>
-					<button id="_c_rotate_doc">&#x21bb;</button>
-					<button id="_c_move_doc_left" class="hidden">&leftarrow;</button>
-					<button id="_c_move_doc_right" class="hidden">&rightarrow;</button>
+					<button id="_c_wipe_pages" class="hidden"><img class="icon" src="images/delete-all.png"></button>
+					<button id="_c_delete_page" class="hidden"><img class="icon" src="images/delete.png"></button>
+					<button id="_c_restore_pages" class="hidden"><img class="icon" src="images/restore.png"></button>
+					<button id="_c_crop_page"><img class="icon" src="images/crop.png"></button>
+					<button id="_c_rotate_page"><img class="icon" src="images/rotate.png"></button>
+					<button id="_c_move_doc_left" class="hidden"><img class="icon" src="images/swap-left.png"></button>
+					<button id="_c_move_doc_right" class="hidden"><img class="icon" src="images/swap-right.png"></button>
 				</div>
-				<button id="_c_preview_hide">X</button>
+				<button id="_c_preview_hide"><img class="icon" src="images/close.png"></button>
 			</div>
 			<div id="preview_canvas">
 				<canvas id="canvas"></canvas>
 			</div>
 			<div id="multipage_help" class="hidden flex sb">
-				<button id="multipage_prev">&larr;</button><span id="multipage_count">1</span><button id="multipage_next">&rarr;</button>
+				<button id="multipage_prev"><img class="icon" src="images/move-left.png"></button>
+				<span id="multipage_count">1</span>
+				<button id="multipage_next"><img class="icon" src="images/move-right.png"></button>
 			</div>
 		</div>
 		<div id="bottom_info">

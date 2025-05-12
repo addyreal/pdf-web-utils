@@ -35,6 +35,11 @@ a
 {
 	color: white;
 }
+img
+{
+	display: block;
+	margin: 0;
+}
 label
 {
 	display: block;
@@ -51,6 +56,16 @@ canvas
 	display: block;
 	cursor: grab;
 }
+.icon
+{
+	user-select: none;
+	pointer-events: none;
+	margin: 6px;
+	width: 20px;
+	height: 20px;
+	max-width: 100%;
+	max-height: 100%;
+}
 .grabbing
 {
 	cursor: grabbing;
@@ -58,6 +73,10 @@ canvas
 .notallowed
 {
 	cursor: not-allowed;
+}
+.crosshair
+{
+	cursor: crosshair;
 }
 .flex
 {
@@ -73,9 +92,13 @@ canvas
 }
 .blurred
 {
-	filter: blur(4px);
-	opacity: 0.6;
+	filter: blur(3px);
+	opacity: 0.8;
 	pointer-events: none;
+}
+.bg-gray
+{
+	background-color: gray;
 }
 
 /*
@@ -164,15 +187,15 @@ canvas
 		{
 			background-color: black;
 			border-bottom: 1px solid white;
-			height: 25px;
+			height: 32px;
 			width: 100%;
 		}
 			.preview_title button
 			{
 				border-right: 1px solid white;
-				height: 25px;
-				width: 25px;
-				line-height: 25px;
+				height: 32px;
+				width: 32px;
+				line-height: 32px;
 				text-align: center;
 				font-weight: bold;
 			}
@@ -189,7 +212,7 @@ canvas
 	{
 		background-color: black;
 		border-top: 1px solid white;
-		height: 25px;
+		height: 32px;
 		width: 100%;
 	}
 	#multipage_help.hidden
@@ -198,13 +221,13 @@ canvas
 	}
 		#multipage_help>*
 		{
-			line-height: 25px;
+			line-height: 32px;
 			text-align: center;
 		}
 		#multipage_help>button
 		{
-			height: 25px;
-			width: 25px;
+			height: 32px;
+			width: 32px;
 			font-weight: bold;
 		}
 		#multipage_prev

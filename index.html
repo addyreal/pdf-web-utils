@@ -11,30 +11,36 @@
 	</head>
 	<body>
 		<textarea id="console" spellcheck="false"></textarea>
+		<div id="bg"></div>
 		<main id="main">
 			<h1>
-				Merge, rearrange, rotate, delete, split, crop
+				PDF Editor
 			</h1>
-			<label id="input_label" for="input">
-				<input id="input" type="file" accept="application/pdf" multiple/>
-				Browse for PDFs...
-			</label>
-			<label for="_c_highdpi">
-				<input type="checkbox" name="" id="_c_highdpi">
-				Ultra high precision
-			</label>
-			<div id="config_container" class="hidden flex">
-				<button id="_c_preview_view">View</button>
-				<button id="action_button_trim">Convert</button>
-				<button id="action_button_split">Convert split</button>
+			<div class="flex gap-25-px">
+				<label id="input_label" for="input">
+					<input id="input" type="file" accept="application/pdf" multiple/>
+					Browse for PDFs...
+				</label>
+				<label for="_c_highdpi">
+					<input type="checkbox" name="" id="_c_highdpi">
+					High DPI
+				</label>
+			</div>
+			<div id="config_container" class="hidden flex gap-25-px">
+				<button id="_c_preview_view">Edit</button>
+				<button id="action_button">Convert</button>
+				<label id="_c_split_label" for="_c_split" class="hidden">
+					<input type="checkbox" name="" id="_c_split">
+					Into separate pages
+				</label>
 			</div>
 		</main>
 		<div id="preview_container" class="popup_window hidden">
-			<div class="preview_title">
+			<div class="preview_title flex sb">
 				<div class="flex">
 					<button id="_c_wipe_docs" class="hidden">&#x2622;</button>
-					<button id="_c_restore_docs" class="hidden">&#x267A;</button>
 					<button id="_c_delete_page">&#x2715;</button>
+					<button id="_c_restore_docs" class="hidden">&#x267A;</button>
 					<button id="_c_rotate_doc">&#x21bb;</button>
 					<button id="_c_move_doc_left" class="hidden">&leftarrow;</button>
 					<button id="_c_move_doc_right" class="hidden">&rightarrow;</button>
@@ -44,9 +50,12 @@
 			<div id="preview_canvas">
 				<canvas id="canvas"></canvas>
 			</div>
-			<div id="multipage_help" class="hidden">
+			<div id="multipage_help" class="hidden flex sb">
 				<button id="multipage_prev">&larr;</button><span id="multipage_count">1</span><button id="multipage_next">&rarr;</button>
 			</div>
+		</div>
+		<div id="bottom_info">
+			<p>Wrapper over <a href="https://mozilla.github.io/pdf.js/">PDF.js</a> and <a href="https://pdf-lib.js.org/">PDF-LIB</a>. <a href="https://github.com/addyreal/pdf-web-utils">Github</a></p>
 		</div>
 	</body>
 </html>

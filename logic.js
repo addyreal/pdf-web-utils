@@ -18,12 +18,14 @@ const multipage_help = document.getElementById('multipage_help');
 const multipage_prev = document.getElementById('multipage_prev');
 const multipage_next = document.getElementById('multipage_next');
 const multipage_count = document.getElementById('multipage_count');
-const action_button_trim = document.getElementById('action_button_trim');
-const action_button_split = document.getElementById('action_button_split');
+const _c_split_label = document.getElementById('_c_split_label');
+const _c_split = document.getElementById('_c_split');
+const action_button = document.getElementById('action_button');
 
 // -------------------- GLOBALS ----------------------------
 
 // Structs
+var split = false;
 var fileBuffers = [null];
 var PDFDocs = [null];
 var numPages = [null];
@@ -213,8 +215,9 @@ function whatPage(i)
 function updatePageCount()
 {
 	multipage_count.innerHTML = 'p:' + (whatPage(pageHelp.current)) + '/' + (numPages[whatDoc(pageHelp.current)]) + ', ';
-	multipage_count.innerHTML += 'd:' + (whatDoc(pageHelp.current) + 1) + '/' + (whatDoc(pageHelp.total) + 1) + ', ';
-	multipage_count.innerHTML += 't:' + pageHelp.current + '/' + pageHelp.total;
+	multipage_count.innerHTML += 'd:' + (whatDoc(pageHelp.current) + 1) + '/' + (whatDoc(pageHelp.total) + 1);
+	//multipage_count.innerHTML += 'd:' + (whatDoc(pageHelp.current) + 1) + '/' + (whatDoc(pageHelp.total) + 1) + ', ';
+	//multipage_count.innerHTML += 't:' + pageHelp.current + '/' + pageHelp.total;
 }
 
 // ---------------------------------------------------------
@@ -284,6 +287,7 @@ function swapRight(arr, i, j, l, k)
 async function renderSwapWrap(docpos, i)
 {
 	renderInProgress = true;
+	saveCurrentCrop(vCanvas);
 	let pagepos = 0;
 	if(docpos != 0)
 	{
@@ -296,11 +300,15 @@ async function renderSwapWrap(docpos, i)
 	{
 		swapRight(pageHelp.rotate, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
 		swapRight(pageHelp.delete, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
+		swapRight(cropArray.saved, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
+		swapRight(cropArray.sizes, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
 	}
 	else if(i == -1)
 	{
 		swapRight(pageHelp.rotate, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
 		swapRight(pageHelp.delete, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
+		swapRight(cropArray.saved, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
+		swapRight(cropArray.sizes, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
 	}
 	const tempFB = fileBuffers[docpos];
 	const tempPD = PDFDocs[docpos];
@@ -312,6 +320,7 @@ async function renderSwapWrap(docpos, i)
 	PDFDocs[docpos + i] = tempPD;
 	numPages[docpos + i] = tempNP;
 	await renderPDFPage(pageHelp.current);
+	restoreCurrentCrop(pageHelp.current, vCanvas);
 	draw();
 	updatePageCount();
 	renderInProgress = false;
@@ -470,7 +479,6 @@ function end()
 	previewWindow.isDragging = false;
 	cropRect.dragging = false;
 	canvas.classList.remove('grabbing');
-	canvas.classList.remove('notallowed');
 }
 
 // Mobile
@@ -972,6 +980,7 @@ _input.onchange = async (e) =>
 	_c_delete_page.classList.add('hidden');
 	_c_move_doc_left.classList.add('hidden');
 	_c_move_doc_right.classList.add('hidden');
+	_c_split_label.classList.add('hidden');
 	multipage_help.classList.add('hidden');
 
 	// Reset (doesnt have to happen, could be a optional button)
@@ -1039,6 +1048,7 @@ _input.onchange = async (e) =>
 		_c_wipe_docs.classList.remove('hidden');
 		_c_delete_page.classList.remove('hidden');
 		multipage_help.classList.remove('hidden');
+		_c_split_label.classList.add('hidden');
 		updatePageCount();
 	}
 }
@@ -1103,7 +1113,7 @@ async function action(split)
 				if(a != 0 || b != 0 || c != width || d != height)
 				{
 					page.setCropBox(toPt(a) + prevCB.x, toPt(b) + prevCB.y, toPt(c), toPt(d));
-					printConsole("Done: Applied a crop to page " + (pageIndex + j) + ", with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
+					printConsole("Done: Page " + (pageIndex + j) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
 				}
 				if(prevCB.x != 0 || prevCB.y != 0 || Math.round(prevCB.width) != toPt(c) || Math.round(prevCB.height) != toPt(d))
 				{
@@ -1113,7 +1123,7 @@ async function action(split)
 			if(pageHelp.rotate[pageIndex + j - 1] != 0)
 			{
 				page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
-				printConsole("Done: Applied a rotation to page " + (pageIndex + j) + ", with angle " + (pageHelp.rotate[pageIndex + j - 1]) * 90 + "° clockwise.\n");
+				printConsole("Done: Page " + (pageIndex + j) + " rotated with angle " + (pageHelp.rotate[pageIndex + j - 1]) * 90 + "° clockwise.\n");
 			}
 		}
 		const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());
@@ -1151,7 +1161,7 @@ async function action(split)
 			if(pageHelp.delete[pageIndex - j + 1] == 1)
 			{
 				newDoc.removePage(pageIndex - j + 1);
-				printConsole("Done: Deleted page " + (pageIndex - j + 2) + ".\n");
+				printConsole("Done: Page " + (pageIndex - j + 2) + " deleted.\n");
 			}
 		}
 	}
@@ -1171,18 +1181,23 @@ async function action(split)
 	URL.revokeObjectURL(link.href);
 }
 
-action_button_trim.addEventListener('click', async function()
+_c_split.addEventListener('change', (e) =>
 {
-	resetConsole();
-
-	action(false);
+	if(e.target.checked)
+	{
+		split = true;
+	}
+	else
+	{
+		split = false;
+	}
 });
 
-action_button_split.addEventListener('click', async function()
+action_button.addEventListener('click', async function()
 {
 	resetConsole();
 
-	action(true);
+	action(split);
 });
 
 // ---------------------------------------------------------

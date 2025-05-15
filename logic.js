@@ -33,11 +33,12 @@ var split = false;
 var isCropping = false;
 var PDFPagesRender = [null];
 var PDFPagesProcess = [null];
-
 var pageHelp = 
 {
 	current: null,
 	total: null,
+	sizes: [{pw: null, ph: null},],
+	crops: [{x: null, y: null, w: null, h: null},],
 	delete: [null],
 	rotate: [null],
 };
@@ -65,11 +66,6 @@ var cropRect =
 	vertex: 0,
 	dragging: false,
 };
-var cropArray = 
-{
-	saved: [{x: null, y: null, w: null, h: null,}],
-	sizes: [{pw: null, ph: null}],
-};
 
 // Resets
 function resetPDFPagesRender()
@@ -86,6 +82,8 @@ function resetPageHelp()
 	{
 		current: 1,
 		total: null,
+		sizes: [],
+		crops: [],
 		delete: [],
 		rotate: [],
 	};
@@ -120,14 +118,6 @@ function resetCurrentCrop(box)
 		dragging: false,
 	};
 }
-function resetCropArray()
-{
-	cropArray = 
-	{
-		saved: [],
-		sizes: [],
-	};
-}
 
 // Utils
 function saveCurrentCrop(box)
@@ -136,21 +126,21 @@ function saveCurrentCrop(box)
 	const y = cropRect.y;
 	const w = cropRect.w;
 	const h = cropRect.h;
-	cropArray.saved[pageHelp.current - 1] = {x: x, y: y, w: w, h: h};
+	pageHelp.crops[pageHelp.current - 1] = {x: x, y: y, w: w, h: h};
 	const pw = box.width - 1;
 	const ph = box.height - 1;
-	cropArray.sizes[pageHelp.current - 1] = {pw: pw, ph: ph};
+	pageHelp.sizes[pageHelp.current - 1] = {pw: pw, ph: ph};
 }
 function restoreCurrentCrop(index, box)
 {
-	if(cropArray.saved[index].w != 0)
+	if(pageHelp.crops[index].w != 0)
 	{
 		cropRect =
 		{
-			x: cropArray.saved[index].x,
-			y: cropArray.saved[index].y,
-			w: cropArray.saved[index].w,
-			h: cropArray.saved[index].h,
+			x: pageHelp.crops[index].x,
+			y: pageHelp.crops[index].y,
+			w: pageHelp.crops[index].w,
+			h: pageHelp.crops[index].h,
 			lastX: 0,
 			lastY: 0,
 			offsetX: 0,
@@ -213,39 +203,28 @@ async function renderMoveWrap(i)
 	renderInProgress = false;
 }
 
-// Swap subarrays
-function swapRight(arr, i, j, l, k)
-{
-	const a = arr.slice(i, i + l);
-	const b = arr.slice(j, j + k);
-	arr.splice(i, l + k, ...b, ...a);
-}
-
 // Wrap for swapping documents
 async function renderSwapWrap(index, i)
 {
 	renderInProgress = true;
-	saveCurrentCrop(vCanvas);
-	if(i == 1)
-	{
-		swapRight(pageHelp.rotate, index, index + i, 1, 1);
-		swapRight(pageHelp.delete, index, index + i, 1, 1);
-		swapRight(cropArray.saved, index, index + i, 1, 1);
-		swapRight(cropArray.sizes, index, index + i, 1, 1);
-	}
-	else if(i == -1)
-	{
-		swapRight(pageHelp.rotate, index + i, index, 1, 1);
-		swapRight(pageHelp.delete, index + i, index, 1, 1);
-		swapRight(cropArray.saved, index + i, index, 1, 1);
-		swapRight(cropArray.sizes, index + i, index, 1, 1);
-	}
-	const tempPR = PDFPagesRender[index];
-	const tempPP = PDFPagesProcess[index];
+	const tempPHR = pageHelp.rotate[index];
+	const tempPHD = pageHelp.delete[index];
+	const tempPHC = pageHelp.crops[index];
+	const tempPHS = pageHelp.sizes[index];
+	const tempPPR = PDFPagesRender[index];
+	const tempPPP = PDFPagesProcess[index];
+	pageHelp.rotate[index] = pageHelp.rotate[index + i];
+	pageHelp.delete[index] = pageHelp.delete[index + i];
+	pageHelp.crops[index] = pageHelp.crops[index + i];
+	pageHelp.sizes[index] = pageHelp.sizes[index + i];
 	PDFPagesRender[index] = PDFPagesRender[index + i];
 	PDFPagesProcess[index] = PDFPagesProcess[index + i];
-	PDFPagesRender[index + i] = tempPR;
-	PDFPagesProcess[index + i] = tempPP;
+	pageHelp.rotate[index + i] = tempPHR;
+	pageHelp.delete[index + i] = tempPHD;
+	pageHelp.crops[index + i] = tempPHC;
+	pageHelp.sizes[index + i] = tempPHS;
+	PDFPagesRender[index + i] = tempPPR;
+	PDFPagesProcess[index + i] = tempPPP;
 	await renderPDFPage(pageHelp.current - 1);
 	restoreCurrentCrop(pageHelp.current - 1, vCanvas);
 	draw();
@@ -951,7 +930,6 @@ _input.onchange = async (e) =>
 	resetPDFPagesProcess();
 	resetPageHelp();
 	resetPreviewWindow();
-	resetCropArray();
 
 	// Get files
 	const files = e.target.files;
@@ -989,8 +967,8 @@ _input.onchange = async (e) =>
 			const temp3 = await temp.save();
 			PDFPagesProcess.push(temp3);
 			PDFPagesRender.push(await PDFDocRender.getPage(j + 1));
-			cropArray.saved.push({x: 0, y: 0, w: 0, h: 0});
-			cropArray.sizes.push({pw: 0, ph: 0});
+			pageHelp.crops.push({x: 0, y: 0, w: 0, h: 0});
+			pageHelp.sizes.push({pw: 0, ph: 0});
 			pageHelp.rotate.push(0);
 			pageHelp.delete.push(0);
 			pageHelp.total++;
@@ -1053,11 +1031,11 @@ async function action(split)
 		const page = (doc.getPages())[0];
 
 		// Nonzero crop
-		if(cropArray.saved[i].w != 0 && cropArray.saved[i].h != 0)
+		if(pageHelp.crops[i].w != 0 && pageHelp.crops[i].h != 0)
 		{
-			const crop = cropArray.saved[i];
-			const width = cropArray.sizes[i].pw;
-			const height = cropArray.sizes[i].ph;
+			const crop = pageHelp.crops[i];
+			const width = pageHelp.sizes[i].pw;
+			const height = pageHelp.sizes[i].ph;
 			const a = Math.round(crop.x);
 			const b = height - Math.round(crop.h) - Math.round(crop.y);
 			const c = Math.round(crop.w);
@@ -1066,11 +1044,11 @@ async function action(split)
 			if(a != 0 || b != 0 || c != width || d != height)
 			{
 				page.setCropBox(toPt(a) + prevCrop.x, toPt(b) + prevCrop.y, toPt(c), toPt(d));
-				printConsole("Done: Page " + (i) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
+				printConsole("Done: Page " + (i + 1) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
 			}
 			if(prevCrop.x != 0 || prevCrop.y != 0 || Math.round(prevCrop.width) != toPt(c) || Math.round(prevCrop.height) != toPt(d))
 			{
-				printConsole("Info: Page " + (i) + " had a cropbox prior to addition.\n");
+				printConsole("Info: Page " + (i + 1) + " had a cropbox prior to addition.\n");
 			}
 		}
 
@@ -1078,7 +1056,7 @@ async function action(split)
 		if(pageHelp.rotate[i] != 0)
 		{
 			page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[i]) * 90));
-			printConsole("Done: Page " + (i) + " rotated with angle " + (pageHelp.rotate[i] * 90) + "° clockwise.\n");
+			printConsole("Done: Page " + (i + 1) + " rotated with angle " + (pageHelp.rotate[i] * 90) + "° clockwise.\n");
 		}
 
 		// Copy over
@@ -1110,7 +1088,7 @@ async function action(split)
 		if(pageHelp.delete[i] == 1)
 		{
 			newDoc.removePage(i);
-			printConsole("Done: Page " + (i) + " deleted.\n");
+			printConsole("Done: Page " + (i + 1) + " deleted.\n");
 		}
 	}
 

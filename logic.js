@@ -742,6 +742,7 @@ _c_highdpi.addEventListener('change', (e) =>
 	}
 
 	// Force reupload, pixel data is up/down-scaled
+	resetConsole();
 	config_container.classList.add('hidden');
 });
 
@@ -787,10 +788,7 @@ multipage_next.addEventListener('click', async function()
 _c_wipe_pages.addEventListener('click', ()=>
 {
 	if(isCropping == true) return;
-	for(let i = 1; i <= pageHelp.total; i++)
-	{
-		pageHelp.delete[i - 1] = 1;
-	}
+	for(let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 1;
 
 	draw();
 })
@@ -799,10 +797,7 @@ _c_wipe_pages.addEventListener('click', ()=>
 _c_restore_pages.addEventListener('click', ()=>
 {
 	if(isCropping == true) return;
-	for(let i = 1; i <= pageHelp.total; i++)
-	{
-		pageHelp.delete[i - 1] = 0;
-	}
+	for(let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 0;
 
 	draw();
 })

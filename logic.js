@@ -11,8 +11,8 @@ const _c_restore_pages = document.getElementById('_c_restore_pages');
 const _c_delete_page = document.getElementById('_c_delete_page');
 const _c_crop_page = document.getElementById('_c_crop_page');
 const _c_rotate_page = document.getElementById('_c_rotate_page');
-const _c_move_doc_left = document.getElementById('_c_move_doc_left');
-const _c_move_doc_right = document.getElementById('_c_move_doc_right');
+const _c_move_page_left = document.getElementById('_c_move_page_left');
+const _c_move_page_right = document.getElementById('_c_move_page_right');
 const preview_container = document.getElementById('preview_container');
 const preview_canvas = document.getElementById('preview_canvas');
 const multipage_help = document.getElementById('multipage_help');
@@ -24,14 +24,16 @@ const _c_split = document.getElementById('_c_split');
 const action_button = document.getElementById('action_button');
 const bottom_info = document.getElementById('bottom_info');
 
+const {PDFDocument} = PDFLib;
+
 // -------------------- GLOBALS ----------------------------
 
 // Structs
 var split = false;
 var isCropping = false;
-var fileBuffers = [null];
-var PDFDocs = [null];
-var numPages = [null];
+var PDFPagesRender = [null];
+var PDFPagesProcess = [null];
+
 var pageHelp = 
 {
 	current: null,
@@ -70,17 +72,13 @@ var cropArray =
 };
 
 // Resets
-function resetFileBuffers()
+function resetPDFPagesRender()
 {
-	fileBuffers = [];
+	PDFPagesRender = [];
 }
-function resetPDFDocs()
+function resetPDFPagesProcess()
 {
-	PDFDocs = [];
-}
-function resetNumPages()
-{
-	numPages = [];
+	PDFPagesProcess = [];
 }
 function resetPageHelp()
 {
@@ -134,26 +132,25 @@ function resetCropArray()
 // Utils
 function saveCurrentCrop(box)
 {
-	const arrIndex = pageHelp.current - 1;
 	const x = cropRect.x;
 	const y = cropRect.y;
 	const w = cropRect.w;
 	const h = cropRect.h;
-	cropArray.saved[arrIndex] = {x: x, y: y, w: w, h: h};
+	cropArray.saved[pageHelp.current - 1] = {x: x, y: y, w: w, h: h};
 	const pw = box.width - 1;
 	const ph = box.height - 1;
-	cropArray.sizes[arrIndex] = {pw: pw, ph: ph};
+	cropArray.sizes[pageHelp.current - 1] = {pw: pw, ph: ph};
 }
 function restoreCurrentCrop(index, box)
 {
-	if(cropArray.saved[index - 1].w != 0)
+	if(cropArray.saved[index].w != 0)
 	{
 		cropRect =
 		{
-			x: cropArray.saved[index - 1].x,
-			y: cropArray.saved[index - 1].y,
-			w: cropArray.saved[index - 1].w,
-			h: cropArray.saved[index - 1].h,
+			x: cropArray.saved[index].x,
+			y: cropArray.saved[index].y,
+			w: cropArray.saved[index].w,
+			h: cropArray.saved[index].h,
 			lastX: 0,
 			lastY: 0,
 			offsetX: 0,
@@ -170,57 +167,12 @@ function restoreCurrentCrop(index, box)
 
 // ---------------------------------------------------------
 
-// -------------------- MULTIDOC ---------------------------
-
-// Which doc is a page
-function whatDoc(i)
-{
-	var docIndex = 0;
-	var pageIndex = i;
-	for(let j = 0; j < PDFDocs.length; j++)
-	{
-		if(pageIndex > numPages[j])
-		{
-			// Page index out of bounds
-			pageIndex -= numPages[j];
-			docIndex++;
-			continue;
-		}
-		// Page index in bounds
-		else
-		{
-			return docIndex;
-		}
-	}
-}
-
-// Which page within a doc is a page
-function whatPage(i)
-{
-	var pageIndex = i;
-	for(let j = 0; j < PDFDocs.length; j++)
-	{
-		if(pageIndex > numPages[j])
-		{
-			// Page index out of bounds
-			pageIndex -= numPages[j];
-			continue;
-		}
-		// Page index in bounds
-		else
-		{
-			return pageIndex;
-		}
-	}
-}
+// -------------------- THING ------------------------------
 
 // Updates the page label
 function updatePageCount()
 {
-	multipage_count.innerHTML = 'p:' + (whatPage(pageHelp.current)) + '/' + (numPages[whatDoc(pageHelp.current)]) + ', ';
-	multipage_count.innerHTML += 'd:' + (whatDoc(pageHelp.current) + 1) + '/' + (whatDoc(pageHelp.total) + 1);
-	//multipage_count.innerHTML += 'd:' + (whatDoc(pageHelp.current) + 1) + '/' + (whatDoc(pageHelp.total) + 1) + ', ';
-	//multipage_count.innerHTML += 't:' + pageHelp.current + '/' + pageHelp.total;
+	multipage_count.innerHTML = pageHelp.current + '/' + pageHelp.total;
 }
 
 // ---------------------------------------------------------
@@ -233,25 +185,8 @@ var renderInProgress = false;
 // Resolves what doc and renders that page
 async function renderPDFPage(i)
 {
-	var page;
-	var pageIndex = i;
-
-	// Loop through docs until the index is within the doc's range
-	for(let j = 0; j < PDFDocs.length; j++)
-	{
-		if(pageIndex > numPages[j])
-		{
-			// Page index out of bounds
-			pageIndex -= numPages[j];
-			continue;
-		}
-		// Page index in bounds
-		else
-		{
-			page = await PDFDocs[j].getPage(pageIndex);
-			break;
-		}
-	}
+	// Pull page
+	const page = PDFPagesRender[i];
 
 	// Set up canvases
 	const viewport = page.getViewport({scale: CONST_DPI/72});
@@ -271,8 +206,8 @@ async function renderMoveWrap(i)
 	renderInProgress = true;
 	saveCurrentCrop(vCanvas);
 	pageHelp.current += i;
-	await renderPDFPage(pageHelp.current);
-	restoreCurrentCrop(pageHelp.current, vCanvas);
+	await renderPDFPage(pageHelp.current - 1);
+	restoreCurrentCrop(pageHelp.current - 1, vCanvas);
 	draw();
 	if(i != 0) updatePageCount();
 	renderInProgress = false;
@@ -287,43 +222,32 @@ function swapRight(arr, i, j, l, k)
 }
 
 // Wrap for swapping documents
-async function renderSwapWrap(docpos, i)
+async function renderSwapWrap(index, i)
 {
 	renderInProgress = true;
 	saveCurrentCrop(vCanvas);
-	let pagepos = 0;
-	if(docpos != 0)
-	{
-		for(let j = 0; j < docpos; j++)
-		{
-			pagepos += numPages[j];
-		}
-	}
 	if(i == 1)
 	{
-		swapRight(pageHelp.rotate, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
-		swapRight(pageHelp.delete, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
-		swapRight(cropArray.saved, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
-		swapRight(cropArray.sizes, pagepos, pagepos + numPages[docpos], numPages[docpos], numPages[docpos + 1]);
+		swapRight(pageHelp.rotate, index, index + i, 1, 1);
+		swapRight(pageHelp.delete, index, index + i, 1, 1);
+		swapRight(cropArray.saved, index, index + i, 1, 1);
+		swapRight(cropArray.sizes, index, index + i, 1, 1);
 	}
 	else if(i == -1)
 	{
-		swapRight(pageHelp.rotate, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
-		swapRight(pageHelp.delete, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
-		swapRight(cropArray.saved, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
-		swapRight(cropArray.sizes, pagepos - numPages[docpos - 1], pagepos, numPages[docpos - 1], numPages[docpos]);
+		swapRight(pageHelp.rotate, index + i, index, 1, 1);
+		swapRight(pageHelp.delete, index + i, index, 1, 1);
+		swapRight(cropArray.saved, index + i, index, 1, 1);
+		swapRight(cropArray.sizes, index + i, index, 1, 1);
 	}
-	const tempFB = fileBuffers[docpos];
-	const tempPD = PDFDocs[docpos];
-	const tempNP = numPages[docpos];
-	fileBuffers[docpos] = fileBuffers[docpos + i];
-	PDFDocs[docpos] = PDFDocs[docpos + i];
-	numPages[docpos] = numPages[docpos + i];
-	fileBuffers[docpos + i] = tempFB;
-	PDFDocs[docpos + i] = tempPD;
-	numPages[docpos + i] = tempNP;
-	await renderPDFPage(pageHelp.current);
-	restoreCurrentCrop(pageHelp.current, vCanvas);
+	const tempPR = PDFPagesRender[index];
+	const tempPP = PDFPagesProcess[index];
+	PDFPagesRender[index] = PDFPagesRender[index + i];
+	PDFPagesProcess[index] = PDFPagesProcess[index + i];
+	PDFPagesRender[index + i] = tempPR;
+	PDFPagesProcess[index + i] = tempPP;
+	await renderPDFPage(pageHelp.current - 1);
+	restoreCurrentCrop(pageHelp.current - 1, vCanvas);
 	draw();
 	updatePageCount();
 	renderInProgress = false;
@@ -923,8 +847,8 @@ function hideWhenCropping()
 	_c_delete_page.classList.toggle('notallowed');
 	_c_restore_pages.classList.toggle('notallowed');
 	_c_rotate_page.classList.toggle('notallowed');
-	_c_move_doc_left.classList.toggle('notallowed');
-	_c_move_doc_right.classList.toggle('notallowed');
+	_c_move_page_left.classList.toggle('notallowed');
+	_c_move_page_right.classList.toggle('notallowed');
 }
 
 // Toggle cropping
@@ -950,25 +874,23 @@ _c_rotate_page.addEventListener('click', ()=>
 	draw();
 })
 
-// Move doc left
-_c_move_doc_left.addEventListener('click', async function()
+// Move page left
+_c_move_page_left.addEventListener('click', async function()
 {
 	if(isCropping == true) return;
-	let curr_doc_num = whatDoc(pageHelp.current);
-	if(curr_doc_num != 0 && !renderInProgress)
+	if(pageHelp.current - 1 != 0 && !renderInProgress)
 	{
-		await renderSwapWrap(curr_doc_num, -1);
+		await renderSwapWrap(pageHelp.current - 1, -1);
 	}
 });
 
-// Move doc right
-_c_move_doc_right.addEventListener('click', async function()
+// Move page right
+_c_move_page_right.addEventListener('click', async function()
 {
 	if(isCropping == true) return;
-	let curr_doc_num = whatDoc(pageHelp.current);
-	if(curr_doc_num != PDFDocs.length - 1 && !renderInProgress)
+	if(pageHelp.current - 1 != pageHelp.total - 1 && !renderInProgress)
 	{
-		await renderSwapWrap(curr_doc_num, 1);
+		await renderSwapWrap(pageHelp.current - 1, 1);
 	}
 });
 
@@ -1018,16 +940,15 @@ _input.onchange = async (e) =>
 	_c_wipe_pages.classList.add('hidden');
 	_c_restore_pages.classList.add('hidden');
 	_c_delete_page.classList.add('hidden');
-	_c_move_doc_left.classList.add('hidden');
-	_c_move_doc_right.classList.add('hidden');
+	_c_move_page_left.classList.add('hidden');
+	_c_move_page_right.classList.add('hidden');
 	_c_split_label.classList.add('hidden');
 	multipage_help.classList.add('hidden');
 
 	// Reset (starting all over)
 	resetConsole();
-	resetFileBuffers();
-	resetPDFDocs();
-	resetNumPages();
+	resetPDFPagesRender();
+	resetPDFPagesProcess();
 	resetPageHelp();
 	resetPreviewWindow();
 	resetCropArray();
@@ -1057,16 +978,22 @@ _input.onchange = async (e) =>
 
 		// Populate globals
 		const fileBuffer = await files[i].arrayBuffer();
-		fileBuffers.push(fileBuffer.slice(0));
-		PDFDocs.push(await pdfjsLib.getDocument({data: fileBuffer}).promise);
-		numPages.push(PDFDocs[i].numPages);
-		pageHelp.total += PDFDocs[i].numPages;
-		for(let j = 0; j < PDFDocs[i].numPages; j++)
+		const fileBuffer2 = fileBuffer.slice(0);
+		const PDFDocRender = await pdfjsLib.getDocument({data: fileBuffer}).promise;
+		const PDFDocProcess = await PDFDocument.load(fileBuffer2);
+		for(let j = 0; j < PDFDocRender.numPages; j++)
 		{
-			pageHelp.rotate.push(0);
-			pageHelp.delete.push(0);
+			const temp = await PDFDocument.create();
+			const [temp2] = await temp.copyPages(PDFDocProcess, [j]);
+			temp.addPage(temp2);
+			const temp3 = await temp.save();
+			PDFPagesProcess.push(temp3);
+			PDFPagesRender.push(await PDFDocRender.getPage(j + 1));
 			cropArray.saved.push({x: 0, y: 0, w: 0, h: 0});
 			cropArray.sizes.push({pw: 0, ph: 0});
+			pageHelp.rotate.push(0);
+			pageHelp.delete.push(0);
+			pageHelp.total++;
 		}
 	}
 
@@ -1079,13 +1006,10 @@ _input.onchange = async (e) =>
 
 	// Enable UI
 	config_container.classList.remove('hidden');
-	if(PDFDocs.length > 1 || numPages[0] > 1)
+	if(pageHelp.total > 1)
 	{
-		if(PDFDocs.length > 1)
-		{
-			_c_move_doc_left.classList.remove('hidden');
-			_c_move_doc_right.classList.remove('hidden');
-		}
+		_c_move_page_left.classList.remove('hidden');
+		_c_move_page_right.classList.remove('hidden');
 		_c_restore_pages.classList.remove('hidden');
 		_c_wipe_pages.classList.remove('hidden');
 		_c_delete_page.classList.remove('hidden');
@@ -1105,17 +1029,12 @@ function toPt(px)
 async function action(split)
 {
 	// Abort nonsense
-	let r = 0;
 	let d = 0;
 	for(let i = 0; i < pageHelp.total; i++)
 	{
 		if(pageHelp.delete[i] != 0)
 		{
 			d++;
-		}
-		else if(pageHelp.rotate[i] != 0)
-		{
-			r++;
 		}
 	}
 	if(d == pageHelp.total)
@@ -1125,86 +1044,73 @@ async function action(split)
 	}
 
 	// Load PDF
-	const {PDFDocument} = PDFLib;
 	const newDoc = await PDFDocument.create();
 
 	// Loop throgh all pages and rotate and copy
-	let pageIndex = 0;
-	for(let i = 0; i < fileBuffers.length; i++)
+	for(let i = 0; i < pageHelp.total; i++)
 	{
-		if(i != 0)
+		const doc = await PDFDocument.load(PDFPagesProcess[i]);
+		const page = (doc.getPages())[0];
+
+		// Nonzero crop
+		if(cropArray.saved[i].w != 0 && cropArray.saved[i].h != 0)
 		{
-			pageIndex += numPages[i - 1];
-		}
-		const pdf = await PDFDocument.load(fileBuffers[i]);
-		// Rotate
-		for(let j = 1; j <= numPages[i]; j++)
-		{
-			const page = (pdf.getPages())[j - 1];
-			// Nonzero crop
-			if(cropArray.saved[pageIndex + j - 1].w != 0 && cropArray.saved[pageIndex + j - 1].h != 0)
+			const crop = cropArray.saved[i];
+			const width = cropArray.sizes[i].pw;
+			const height = cropArray.sizes[i].ph;
+			const a = Math.round(crop.x);
+			const b = height - Math.round(crop.h) - Math.round(crop.y);
+			const c = Math.round(crop.w);
+			const d = Math.round(crop.h);
+			const prevCrop = page.getCropBox();
+			if(a != 0 || b != 0 || c != width || d != height)
 			{
-				const savedCrop = cropArray.saved[pageIndex + j - 1];
-				const width = cropArray.sizes[pageIndex + j - 1].pw;
-				const height = cropArray.sizes[pageIndex + j - 1].ph;
-				const a = Math.round(savedCrop.x);
-				const b = height - Math.round(savedCrop.h) - Math.round(savedCrop.y);
-				const c = Math.round(savedCrop.w);
-				const d = Math.round(savedCrop.h);
-				const prevCB = page.getCropBox();
-				if(a != 0 || b != 0 || c != width || d != height)
-				{
-					page.setCropBox(toPt(a) + prevCB.x, toPt(b) + prevCB.y, toPt(c), toPt(d));
-					printConsole("Done: Page " + (pageIndex + j) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
-				}
-				if(prevCB.x != 0 || prevCB.y != 0 || Math.round(prevCB.width) != toPt(c) || Math.round(prevCB.height) != toPt(d))
-				{
-					printConsole("Info: Page " + (pageIndex + j) + " had a cropbox prior to addition.\n");
-				}
+				page.setCropBox(toPt(a) + prevCrop.x, toPt(b) + prevCrop.y, toPt(c), toPt(d));
+				printConsole("Done: Page " + (i) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
 			}
-			if(pageHelp.rotate[pageIndex + j - 1] != 0)
+			if(prevCrop.x != 0 || prevCrop.y != 0 || Math.round(prevCrop.width) != toPt(c) || Math.round(prevCrop.height) != toPt(d))
 			{
-				page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[pageIndex + j - 1]) * 90));
-				printConsole("Done: Page " + (pageIndex + j) + " rotated with angle " + (pageHelp.rotate[pageIndex + j - 1]) * 90 + "° clockwise.\n");
+				printConsole("Info: Page " + (i) + " had a cropbox prior to addition.\n");
 			}
 		}
-		const copy = await newDoc.copyPages(pdf, pdf.getPageIndices());
-		copy.forEach((page) => newDoc.addPage(page));
+
+		// Nonzero rotation
+		if(pageHelp.rotate[i] != 0)
+		{
+			page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[i]) * 90));
+			printConsole("Done: Page " + (i) + " rotated with angle " + (pageHelp.rotate[i] * 90) + "° clockwise.\n");
+		}
+
+		// Copy over
+		const [copy] = await newDoc.copyPages(doc, [0]);
+		newDoc.addPage(copy);
 	}
 
 	// Loop through all pages and delete
-	pageIndex = pageHelp.total - 1;
-	for(let i = fileBuffers.length - 1; i >= 0; i--)
+	for(let i = pageHelp.total - 1; i >= 0; i--)
 	{
-		if(i != fileBuffers.length - 1)
-		{
-			pageIndex -= numPages[i + 1];
-		}
 		// Delete or download
-		for(let j = 1; j <= numPages[i]; j++)
+		if(split && pageHelp.delete[i] == 0)
 		{
-			if(split && pageHelp.delete[pageIndex - j + 1] == 0)
-			{
-				// Copy
-				const singlePage = await PDFDocument.create();
-				const [copy] = await singlePage.copyPages(newDoc, [pageIndex - j + 1]);
-				singlePage.addPage(copy);
-		
-				// Download
-				const pageBytes = await singlePage.save();
-				const blob = new Blob([pageBytes], {type: 'application/pdf'});
-				const link = document.createElement('a');
-				link.href = URL.createObjectURL(blob);
-				link.download = `converted-${pageIndex - j + 1}` + '.pdf';
-				link.click();
-				URL.revokeObjectURL(link.href);
-				continue;
-			}
-			if(pageHelp.delete[pageIndex - j + 1] == 1)
-			{
-				newDoc.removePage(pageIndex - j + 1);
-				printConsole("Done: Page " + (pageIndex - j + 2) + " deleted.\n");
-			}
+			// Copy
+			const singlePage = await PDFDocument.create();
+			const [copy] = await singlePage.copyPages(newDoc, [i]);
+			singlePage.addPage(copy);
+	
+			// Download
+			const pageBytes = await singlePage.save();
+			const blob = new Blob([pageBytes], {type: 'application/pdf'});
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = `converted-${i + 1}` + '.pdf';
+			link.click();
+			URL.revokeObjectURL(link.href);
+			continue;
+		}
+		if(pageHelp.delete[i] == 1)
+		{
+			newDoc.removePage(i);
+			printConsole("Done: Page " + (i) + " deleted.\n");
 		}
 	}
 
@@ -1218,7 +1124,7 @@ async function action(split)
 	const bob = new Blob([newBytes], {type: 'application/pdf'});
 	const link = document.createElement('a');
 	link.href = URL.createObjectURL(bob);
-	link.download = 'merged' + '.pdf';
+	link.download = 'converted' + '.pdf';
 	link.click();
 	URL.revokeObjectURL(link.href);
 }

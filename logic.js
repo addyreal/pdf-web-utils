@@ -1128,3 +1128,10 @@ action_button.addEventListener('click', async function()
 });
 
 // ---------------------------------------------------------
+
+
+// hack
+if(window.innerHeight > window.innerWidth)
+{
+	document.documentElement.classList.add('mobile');
+}

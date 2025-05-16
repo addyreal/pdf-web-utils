@@ -3,6 +3,10 @@ html
 	width: 100%;
 	height: 100%;
 }
+html.mobile
+{
+	font-size: 20px;
+}
 body *
 {
 	font-family: 'Lucida Console', Monaco, monospace;
@@ -259,12 +263,4 @@ canvas
 {
 	margin: 0;
 	text-align: center;
-}
-
-@media (max-width: 800px)
-{
-	html
-	{
-		font-size: 12px;
-	}
 }

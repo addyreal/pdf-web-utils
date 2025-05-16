@@ -431,6 +431,7 @@ function mobileZoom(touch1, touch2)
 }
 function mobileEnd()
 {
+	cropRect.dragging = false;
 	previewWindow.isDragging = false;
 	previewWindow.isTouchZooming = false;
 }
@@ -655,6 +656,7 @@ canvas.addEventListener('touchstart', function(e)
 	}
 	else if(e.touches.length == 2)
 	{
+		cropRect.dragging = false;
 		mobileStartZoom(e.touches[0], e.touches[1]);
 	}
 }, {passive: false});

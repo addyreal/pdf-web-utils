@@ -263,6 +263,10 @@ canvas
 
 @media (max-width: 800px)
 {
+	html
+	{
+		font-size: 12px;
+	}
 	.icon
 	{
 		margin: 6px;

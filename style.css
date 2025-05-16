@@ -267,27 +267,4 @@ canvas
 	{
 		font-size: 12px;
 	}
-	.icon
-	{
-		margin: 6px;
-		width: 50px;
-		height: 50px;
-	}
-	.preview_title, #multipage_help
-	{
-		height: 64px;
-	}
-	.preview_title button, #multipage_help>button
-	{
-		width: 64px;
-		height: 64px;
-	}
-	.preview_title button, #multipage_help>*
-	{
-		line-height: 64px;
-	}
-	#multipage_count
-	{
-		font-size: 1.8rem;
-	}
 }

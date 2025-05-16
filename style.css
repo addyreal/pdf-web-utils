@@ -264,3 +264,28 @@ canvas
 	margin: 0;
 	text-align: center;
 }
+
+/* HACK */
+html.mobile .icon
+{
+	margin: 6px;
+	width: 50px;
+	height: 50px;
+}
+html.mobile .preview_title, html.mobile #multipage_help
+{
+	height: 64px;
+}
+html.mobile .preview_title button, html.mobile #multipage_help>button
+{
+	width: 64px;
+	height: 64px;
+}
+html.mobile .preview_title button, html.mobile #multipage_help>*
+{
+	line-height: 64px;
+}
+html.mobile #multipage_count
+{
+	font-size: 1.8rem;
+}

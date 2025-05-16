@@ -263,7 +263,7 @@ var CONST_DPI = 144;
 const CONST_CROPTHICKNESS = 1;
 const CONST_CROPSQUAREAREA = 16;
 const CONST_ZOOMFACTOR = 1.1;
-const CONST_MOBILEZOOMFACTOR = 1.3;
+const CONST_MOBILEZOOMFACTOR = 10;
 
 // Draw, vCanvas into canvas
 function draw()

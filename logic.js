@@ -263,7 +263,7 @@ var CONST_DPI = 144;
 const CONST_CROPTHICKNESS = 1;
 const CONST_CROPSQUAREAREA = 16;
 const CONST_ZOOMFACTOR = 1.1;
-const CONST_MOBILEZOOMFACTOR = 1.05;
+const CONST_MOBILEZOOMFACTOR = 1.01;
 
 // Draw, vCanvas into canvas
 function draw()
@@ -1078,6 +1078,8 @@ async function action(split)
 			const link = document.createElement('a');
 			link.href = URL.createObjectURL(blob);
 			link.download = `converted-${i + 1}` + '.pdf';
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
 			link.click();
 			URL.revokeObjectURL(link.href);
 			continue;
@@ -1100,6 +1102,8 @@ async function action(split)
 	const link = document.createElement('a');
 	link.href = URL.createObjectURL(bob);
 	link.download = 'converted' + '.pdf';
+	link.target = '_blank';
+	link.rel = 'noopener noreferrer';
 	link.click();
 	URL.revokeObjectURL(link.href);
 }

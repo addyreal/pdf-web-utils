@@ -1061,29 +1061,43 @@ async function action(split)
 		newDoc.addPage(copy);
 	}
 
+	if(split)
+	{
+		const zip = new JSZip();
+
+		// Loop through all pages and make a zip
+		for(let i = pageHelp.total - 1; i >= 0; i--)
+		{
+			// Add
+			if(pageHelp.delete[i] == 0)
+			{
+				// Copy
+				const singlePage = await PDFDocument.create();
+				const [copy] = await singlePage.copyPages(newDoc, [i]);
+				singlePage.addPage(copy);
+		
+				// Download
+				const pageBytes = await singlePage.save();
+				zip.file('page-' + (i + 1) + '.pdf', pageBytes);
+			}
+		}
+		
+		// Download
+		const blob = await zip.generateAsync({type: 'blob'});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'ConvertedPDF.zip';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+		return;
+	}
+
 	// Loop through all pages and delete
 	for(let i = pageHelp.total - 1; i >= 0; i--)
 	{
-		// Delete or download
-		if(split && pageHelp.delete[i] == 0)
-		{
-			// Copy
-			const singlePage = await PDFDocument.create();
-			const [copy] = await singlePage.copyPages(newDoc, [i]);
-			singlePage.addPage(copy);
-	
-			// Download
-			const pageBytes = await singlePage.save();
-			const blob = new Blob([pageBytes], {type: 'application/pdf'});
-			const link = document.createElement('a');
-			link.href = URL.createObjectURL(blob);
-			link.download = `converted-${i + 1}` + '.pdf';
-			link.target = '_blank';
-			link.rel = 'noopener noreferrer';
-			link.click();
-			URL.revokeObjectURL(link.href);
-			continue;
-		}
 		if(pageHelp.delete[i] == 1)
 		{
 			newDoc.removePage(i);
@@ -1091,21 +1105,19 @@ async function action(split)
 		}
 	}
 
-	// Download is done for split
-	if(split) return;
-
 	// Save
 	newBytes = await newDoc.save();
 
 	// Make bob
-	const bob = new Blob([newBytes], {type: 'application/pdf'});
+	const blob = new Blob([newBytes], {type: 'application/pdf'});
+	const url = URL.createObjectURL(blob);
 	const link = document.createElement('a');
-	link.href = URL.createObjectURL(bob);
-	link.download = 'converted' + '.pdf';
-	link.target = '_blank';
-	link.rel = 'noopener noreferrer';
+	link.href = url;
+	link.download = 'Converted.pdf';
+	document.body.appendChild(link);
 	link.click();
-	URL.revokeObjectURL(link.href);
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
 }
 
 _c_split.addEventListener('change', (e) =>

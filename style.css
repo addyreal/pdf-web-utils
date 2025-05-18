@@ -91,6 +91,10 @@ canvas
 {
 	display: flex;
 }
+.fc
+{
+	flex-direction: column;
+}
 .sb
 {
 	justify-content: space-between;
@@ -178,7 +182,7 @@ canvas
 */
 #preview_canvas canvas
 {
-	background-color: black;
+	background: linear-gradient(135deg, rgb(255, 0, 0) 0%, rgba(0, 255, 0, 0.5) 50%, rgb(0, 0, 255) 100%);			
 	margin: 0 auto;
 	max-width: 90vw;
 }

@@ -1,28 +1,28 @@
 // DOM
-const main = document.getElementById('main');
-const _console = document.getElementById('console');
-const _input = document.getElementById('input');
-const _c_highdpi = document.getElementById('_c_highdpi');
-const config_container = document.getElementById('config_container');
-const _c_preview_view = document.getElementById('_c_preview_view');
-const _c_preview_hide = document.getElementById('_c_preview_hide');
-const _c_wipe_pages = document.getElementById('_c_wipe_pages');
-const _c_restore_pages = document.getElementById('_c_restore_pages');
-const _c_delete_page = document.getElementById('_c_delete_page');
-const _c_crop_page = document.getElementById('_c_crop_page');
-const _c_rotate_page = document.getElementById('_c_rotate_page');
-const _c_move_page_left = document.getElementById('_c_move_page_left');
-const _c_move_page_right = document.getElementById('_c_move_page_right');
-const preview_container = document.getElementById('preview_container');
-const preview_canvas = document.getElementById('preview_canvas');
-const multipage_help = document.getElementById('multipage_help');
-const multipage_prev = document.getElementById('multipage_prev');
-const multipage_next = document.getElementById('multipage_next');
-const multipage_count = document.getElementById('multipage_count');
-const _c_split_label = document.getElementById('_c_split_label');
-const _c_split = document.getElementById('_c_split');
-const action_button = document.getElementById('action_button');
-const bottom_info = document.getElementById('bottom_info');
+const main = document.getElementById("main");
+const _console = document.getElementById("console");
+const _input = document.getElementById("input");
+const _c_highdpi = document.getElementById("_c_highdpi");
+const config_container = document.getElementById("config_container");
+const _c_preview_view = document.getElementById("_c_preview_view");
+const _c_preview_hide = document.getElementById("_c_preview_hide");
+const _c_wipe_pages = document.getElementById("_c_wipe_pages");
+const _c_restore_pages = document.getElementById("_c_restore_pages");
+const _c_delete_page = document.getElementById("_c_delete_page");
+const _c_crop_page = document.getElementById("_c_crop_page");
+const _c_rotate_page = document.getElementById("_c_rotate_page");
+const _c_move_page_left = document.getElementById("_c_move_page_left");
+const _c_move_page_right = document.getElementById("_c_move_page_right");
+const preview_container = document.getElementById("preview_container");
+const preview_canvas = document.getElementById("preview_canvas");
+const multipage_help = document.getElementById("multipage_help");
+const multipage_prev = document.getElementById("multipage_prev");
+const multipage_next = document.getElementById("multipage_next");
+const multipage_count = document.getElementById("multipage_count");
+const _c_split_label = document.getElementById("_c_split_label");
+const _c_split = document.getElementById("_c_split");
+const action_button = document.getElementById("action_button");
+const bottom_info = document.getElementById("bottom_info");
 
 const {PDFDocument} = PDFLib;
 
@@ -33,8 +33,7 @@ var split = false;
 var isCropping = false;
 var PDFPagesRender = [null];
 var PDFPagesProcess = [null];
-var pageHelp = 
-{
+var pageHelp = {
 	current: null,
 	total: null,
 	sizes: [{pw: null, ph: null},],
@@ -42,8 +41,7 @@ var pageHelp =
 	delete: [null],
 	rotate: [null],
 };
-var previewWindow =
-{
+var previewWindow = {
 	scale: null,
 	lastTouchesDist: null,
 	lastX: null,
@@ -53,8 +51,7 @@ var previewWindow =
 	isDragging: null,
 	isTouchZooming: null,
 };
-var cropRect =
-{
+var cropRect = {
 	x: 0,
 	y: 0,
 	w: 0,
@@ -68,18 +65,14 @@ var cropRect =
 };
 
 // Resets
-function resetPDFPagesRender()
-{
+function resetPDFPagesRender() {
 	PDFPagesRender = [];
 }
-function resetPDFPagesProcess()
-{
+function resetPDFPagesProcess() {
 	PDFPagesProcess = [];
 }
-function resetPageHelp()
-{
-	pageHelp = 
-	{
+function resetPageHelp() {
+	pageHelp = {
 		current: 1,
 		total: null,
 		sizes: [],
@@ -88,10 +81,9 @@ function resetPageHelp()
 		rotate: [],
 	};
 }
-function resetPreviewWindow()
-{
+function resetPreviewWindow() {
 	previewWindow =
-	{
+ 
 		scale: 1,
 		lastTouchesDist: 0,
 		lastX: 0,
@@ -102,10 +94,8 @@ function resetPreviewWindow()
 		isTouchZooming: false,
 	};
 }
-function resetCurrentCrop(box)
-{
-	cropRect =
-	{
+function resetCurrentCrop(box) {
+	cropRect = {
 		x: 0,
 		y: 0,
 		w: box.width - 1,
@@ -120,8 +110,7 @@ function resetCurrentCrop(box)
 }
 
 // Utils
-function saveCurrentCrop(box)
-{
+function saveCurrentCrop(box) {
 	const x = cropRect.x;
 	const y = cropRect.y;
 	const w = cropRect.w;
@@ -131,12 +120,9 @@ function saveCurrentCrop(box)
 	const ph = box.height - 1;
 	pageHelp.sizes[pageHelp.current - 1] = {pw: pw, ph: ph};
 }
-function restoreCurrentCrop(index, box)
-{
-	if(pageHelp.crops[index].w != 0)
-	{
-		cropRect =
-		{
+function restoreCurrentCrop(index, box) {
+	if (pageHelp.crops[index].w != 0) {
+		cropRect = {
 			x: pageHelp.crops[index].x,
 			y: pageHelp.crops[index].y,
 			w: pageHelp.crops[index].w,
@@ -148,9 +134,7 @@ function restoreCurrentCrop(index, box)
 			vertex: 0,
 			dragging: false,
 		};
-	}
-	else
-	{
+	} else {
 		resetCurrentCrop(box);
 	}
 }
@@ -160,9 +144,8 @@ function restoreCurrentCrop(index, box)
 // -------------------- THING ------------------------------
 
 // Updates the page label
-function updatePageCount()
-{
-	multipage_count.innerHTML = pageHelp.current + '/' + pageHelp.total;
+function updatePageCount() {
+	multipage_count.innerHTML = pageHelp.current + "/" + pageHelp.total;
 }
 
 // ---------------------------------------------------------
@@ -173,8 +156,7 @@ function updatePageCount()
 var renderInProgress = false;
 
 // Resolves what doc and renders that page
-async function renderPDFPage(i)
-{
+async function renderPDFPage(i) {
 	// Pull page
 	const page = PDFPagesRender[i];
 
@@ -191,21 +173,19 @@ async function renderPDFPage(i)
 }
 
 // Wrap for moving between pages
-async function renderMoveWrap(i)
-{
+async function renderMoveWrap(i) {
 	renderInProgress = true;
 	saveCurrentCrop(vCanvas);
 	pageHelp.current += i;
 	await renderPDFPage(pageHelp.current - 1);
 	restoreCurrentCrop(pageHelp.current - 1, vCanvas);
 	draw();
-	if(i != 0) updatePageCount();
+	if (i != 0) updatePageCount();
 	renderInProgress = false;
 }
 
 // Wrap for swapping documents
-async function renderSwapWrap(index, i)
-{
+async function renderSwapWrap(index, i) {
 	renderInProgress = true;
 	const tempPHR = pageHelp.rotate[index];
 	const tempPHD = pageHelp.delete[index];
@@ -234,13 +214,11 @@ async function renderSwapWrap(index, i)
 
 // -------------------- CONSOLE ----------------------------
 
-function printConsole(text)
-{
+function printConsole(text) {
 	_console.value += text;
 	_console.scrollTop = _console.scrollHeight;
 }
-function resetConsole()
-{
+function resetConsole() {
 	_console.value = "";
 }
 
@@ -249,13 +227,13 @@ function resetConsole()
 // -------------------- CANVAS -----------------------------
 
 // Main canvas
-const canvas = document.getElementById('canvas');
-const context = canvas.getContext('2d');
+const canvas = document.getElementById("canvas");
+const context = canvas.getContext("2d");
 context.imageSmoothingEnabled = false;
 
 // Virtual canvas
-const vCanvas = document.createElement('canvas');
-const vContext = vCanvas.getContext('2d');
+const vCanvas = document.createElement("canvas");
+const vContext = vCanvas.getContext("2d");
 vContext.imageSmoothingEnabled = false;
 
 // Constants
@@ -266,8 +244,7 @@ const CONST_ZOOMFACTOR = 1.1;
 const CONST_MOBILEZOOMFACTOR = 1.03;
 
 // Draw, vCanvas into canvas
-function draw()
-{
+function draw() {
 	// Apply pan and zoom
 	context.setTransform(1, 0, 0, 1, 0, 0);
 	context.clearRect(0, 0, canvas.width, canvas.height);
@@ -275,8 +252,7 @@ function draw()
 	context.setTransform(previewWindow.scale, 0, 0, previewWindow.scale, previewWindow.offsetX, previewWindow.offsetY);
 
 	// Apply rotation
-	if(pageHelp.rotate[pageHelp.current - 1] != 0 && isCropping == false)
-	{
+	if (pageHelp.rotate[pageHelp.current - 1] != 0 && isCropping == false) {
 		context.translate(vCanvas.width / 2, vCanvas.height / 2);
 		context.rotate(pageHelp.rotate[pageHelp.current - 1] * Math.PI / 2);
 		context.translate(-1 * vCanvas.width / 2, -1 * vCanvas.height / 2);
@@ -286,11 +262,10 @@ function draw()
 	context.drawImage(vCanvas, 0, 0);
 
 	// Draw removal
-	if(pageHelp.delete[pageHelp.current - 1] == 1)
-	{
-		context.strokeStyle = 'red';
+	if (pageHelp.delete[pageHelp.current - 1] == 1) {
+		context.strokeStyle = "red";
 		context.lineWidth = 2;
-		context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+		context.fillStyle = "rgba(0, 0, 0, 0.5)";
 		context.fillRect(0, 0, vCanvas.width, vCanvas.height);
 
 		context.beginPath();
@@ -302,18 +277,15 @@ function draw()
 		context.moveTo(vCanvas.width, 0);
 		context.lineTo(0, vCanvas.height);
 		context.stroke();
-	}
 	// Else draw cropbox
-	else
-	{
+	} else {
 		const cropX = Math.round(cropRect.x);
 		const cropY = Math.round(cropRect.y);
 		const cropW = Math.round(cropRect.w);
 		const cropH = Math.round(cropRect.h);
 
-		if(isCropping == true)
-		{
-			context.fillStyle = 'red';
+		if (isCropping == true) {
+			context.fillStyle = "red";
 			context.fillRect(cropX + 1 - CONST_CROPSQUAREAREA, cropY + 1 - CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
 			context.fillRect(cropX + 1 - CONST_CROPSQUAREAREA, cropY + cropH, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
 			context.fillRect(cropX + cropW, cropY + 1 - CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA, CONST_CROPSQUAREAREA);
@@ -321,19 +293,18 @@ function draw()
 		}
 
 		context.save();
-		context.fillStyle = 'rgba(0, 0, 0, 0.25)';
+		context.fillStyle = "rgba(0, 0, 0, 0.25)";
 		context.fillRect(cropX, cropY, cropW, cropH);
 		context.restore();
 
-		context.strokeStyle = 'rgba(255, 0, 0 , 0.6)';
+		context.strokeStyle = "rgba(255, 0, 0 , 0.6)";
 		context.lineWidth = CONST_CROPTHICKNESS;
 		context.strokeRect(cropX + CONST_CROPTHICKNESS/2, cropY + CONST_CROPTHICKNESS/2, cropW, cropH);
 	}
 }
 
 // Click
-function press(x, y)
-{
+function press(x, y) {
 	const rect = canvas.getBoundingClientRect();
 	previewWindow.isDragging = true;
 	previewWindow.isTouchZooming = false;
@@ -342,9 +313,8 @@ function press(x, y)
 }
 
 // Move
-function move(x, y)
-{
-	if(!previewWindow.isDragging || previewWindow.isTouchZooming) return;
+function move(x, y) {
+	if (!previewWindow.isDragging || previewWindow.isTouchZooming) return;
 	const rect = canvas.getBoundingClientRect();
 
 	const dx = x - rect.left - previewWindow.lastX;
@@ -360,8 +330,7 @@ function move(x, y)
 }
 
 // Zoom
-function zoom(e)
-{
+function zoom(e) {
 	const rect = canvas.getBoundingClientRect();
 
 	const mouseX = e.clientX - rect.left;
@@ -380,37 +349,31 @@ function zoom(e)
 }
 
 // End
-function end()
-{
+function end() {
 	previewWindow.isDragging = false;
 	cropRect.dragging = false;
-	canvas.classList.remove('grabbing');
+	canvas.classList.remove("grabbing");
 }
 
 // Mobile
-function getTouchesDist(touch1, touch2)
-{
+function getTouchesDist(touch1, touch2) {
 	const dx = touch1.clientX - touch2.clientX;
 	const dy = touch1.clientY - touch2.clientY;
 	return Math.hypot(dx, dy);
 }
-function getTouchesX(touch1, touch2)
-{
+function getTouchesX(touch1, touch2) {
 	return (touch1.clientX + touch2.clientX)/2;
 }
-function getTouchesY(touch1, touch2)
-{
+function getTouchesY(touch1, touch2) {
 	return (touch1.clientY + touch2.clientY)/2;
 }
-function mobileStartZoom(touch1, touch2)
-{
+function mobileStartZoom(touch1, touch2) {
 	cropRect.dragging = false;
 	previewWindow.isDragging = false;
 	previewWindow.isTouchZooming = true;
 	previewWindow.lastTouchesDist = getTouchesDist(touch1, touch2);
 }
-function mobileZoom(touch1, touch2)
-{
+function mobileZoom(touch1, touch2) {
 	const rect = canvas.getBoundingClientRect();
 
 	const touchX = getTouchesX(touch1, touch2) - rect.left;
@@ -429,8 +392,7 @@ function mobileZoom(touch1, touch2)
 
 	draw();
 }
-function mobileEnd()
-{
+function mobileEnd() {
 	cropRect.dragging = false;
 	previewWindow.isDragging = false;
 	previewWindow.isTouchZooming = false;
@@ -444,14 +406,12 @@ function mobileEnd()
 
 // -------------------- PC IMPLEMENTATION ------------------
 
-canvas.addEventListener('wheel', (e)=>
-{
+canvas.addEventListener("wheel", (e)=> {
 	e.preventDefault();
 	zoom(e);
 });
-canvas.addEventListener('mousedown', (e)=>
-{
-	canvas.classList.add('grabbing');
+canvas.addEventListener("mousedown", (e)=> {
+	canvas.classList.add("grabbing");
 	const rect = canvas.getBoundingClientRect();
 	const mouseX = e.clientX - rect.left;
 	const mouseY = e.clientY - rect.top;
@@ -461,81 +421,69 @@ canvas.addEventListener('mousedown', (e)=>
 	const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
 	const cropW = cropRect.w * previewWindow.scale;
 	const cropH = cropRect.h * previewWindow.scale;
-	if(isCropping == true &&
+	if (isCropping == true &&
 		mouseX >= cropX - previewWindow.scale - 10 &&
 		mouseX <= cropX + previewWindow.scale + 10 &&
 		mouseY >= cropY - previewWindow.scale - 10 &&
-		mouseY <= cropY + previewWindow.scale + 10)
-	{
+		mouseY <= cropY + previewWindow.scale + 10) {
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
 		cropRect.offsetY = 0;
 		cropRect.vertex = 0;
 		cropRect.dragging = true;
-	}
-	else if(isCropping == true &&
+	} else if (isCropping == true &&
 		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
 		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
 		mouseY >= cropY - previewWindow.scale - 10 &&
-		mouseY <= cropY + previewWindow.scale + 10)
-	{
+		mouseY <= cropY + previewWindow.scale + 10) {
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
 		cropRect.offsetY = 0;
 		cropRect.vertex = 1;
 		cropRect.dragging = true;
-	}
-	else if(isCropping == true &&
+	} else if (isCropping == true &&
 		mouseX >= cropX - previewWindow.scale - 10 &&
 		mouseX <= cropX + previewWindow.scale + 10 &&
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
-		mouseY <= cropY + cropH + previewWindow.scale + 10)
-	{
+		mouseY <= cropY + cropH + previewWindow.scale + 10) {
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
 		cropRect.offsetY = 0;
 		cropRect.vertex = 2;
 		cropRect.dragging = true;
-	}
-	else if(isCropping == true &&
+	} else if (isCropping == true &&
 		mouseX >= cropX + cropW - previewWindow.scale - 10 &&
 		mouseX <= cropX + cropW + previewWindow.scale + 10 &&
 		mouseY >= cropY + cropH - previewWindow.scale - 10 &&
-		mouseY <= cropY + cropH + previewWindow.scale + 10)
-	{
+		mouseY <= cropY + cropH + previewWindow.scale + 10) {
 		cropRect.lastX = (mouseX - previewWindow.offsetX) / previewWindow.scale;
 		cropRect.lastY = (mouseY - previewWindow.offsetY) / previewWindow.scale;
 		cropRect.offsetX = 0;
 		cropRect.offsetY = 0;
 		cropRect.vertex = 3;
 		cropRect.dragging = true;
-	}
 	// Other grabbing (panning)
-	else
-	{
+	} else {
 		press(e.clientX, e.clientY);
 	}
 });
-canvas.addEventListener('mousemove', (e)=>
-{
+canvas.addEventListener("mousemove", (e)=> {
 	e.preventDefault();
 	const rect = canvas.getBoundingClientRect();
 	const mouseX = e.clientX - rect.left;
 	const mouseY = e.clientY - rect.top;
 
 	// Vertex grabbing
-	if(cropRect.dragging == true)
-	{
+	if (cropRect.dragging == true) {
 		const newX = (mouseX - cropRect.offsetX - previewWindow.offsetX) / previewWindow.scale;
 		const newY = (mouseY - cropRect.offsetY - previewWindow.offsetY) / previewWindow.scale;
 		let dx = newX - cropRect.lastX;
 		let dy = newY - cropRect.lastY;
 
-		switch(cropRect.vertex)
-		{
+		switch (cropRect.vertex) {
 			case 0:
 				cropRect.x += dx;
 				cropRect.y += dy;
@@ -562,19 +510,15 @@ canvas.addEventListener('mousemove', (e)=>
 		cropRect.lastY = newY;
 
 		draw();
-	}
 	// Maybe other grabbing (panning)
-	else
-	{
+	} else {
 		move(e.clientX, e.clientY);
 	}
 });
-canvas.addEventListener('mouseup', ()=>
-{
+canvas.addEventListener("mouseup", ()=> {
 	end();
 });
-canvas.addEventListener('mouseleave', ()=>
-{
+canvas.addEventListener("mouseleave", ()=> {
 	end();
 });
 
@@ -582,11 +526,9 @@ canvas.addEventListener('mouseleave', ()=>
 
 // -------------------- MOBILE IMPLEMENTATION --------------
 
-canvas.addEventListener('touchstart', function(e)
-{
+canvas.addEventListener("touchstart", function(e) {
 	e.preventDefault();
-	if(e.touches.length == 1)
-	{
+	if (e.touches.length == 1) {
 		const rect = canvas.getBoundingClientRect();
 		const touchX = e.touches[0].clientX - rect.left;
 		const touchY = e.touches[0].clientY - rect.top;
@@ -596,78 +538,64 @@ canvas.addEventListener('touchstart', function(e)
 		const cropY = cropRect.y * previewWindow.scale + previewWindow.offsetY;
 		const cropW = cropRect.w * previewWindow.scale;
 		const cropH = cropRect.h * previewWindow.scale;
-		if(isCropping == true &&
+		if (isCropping == true &&
 			touchX >= cropX - previewWindow.scale - 20 &&
 			touchX <= cropX + previewWindow.scale + 20 &&
 			touchY >= cropY - previewWindow.scale - 20 &&
-			touchY <= cropY + previewWindow.scale + 20)
-		{
+			touchY <= cropY + previewWindow.scale + 20) {
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
 			cropRect.offsetY = 0;
 			cropRect.vertex = 0;
 			cropRect.dragging = true;
-		}
-		else if(isCropping == true &&
+		} else if (isCropping == true &&
 			touchX >= cropX + cropW - previewWindow.scale - 20 &&
 			touchX <= cropX + cropW + previewWindow.scale + 20 &&
 			touchY >= cropY - previewWindow.scale - 20 &&
-			touchY <= cropY + previewWindow.scale + 20)
-		{
+			touchY <= cropY + previewWindow.scale + 20) {
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
 			cropRect.offsetY = 0;
 			cropRect.vertex = 1;
 			cropRect.dragging = true;
-		}
-		else if(isCropping == true &&
+		} else if (isCropping == true &&
 			touchX >= cropX - previewWindow.scale - 20 &&
 			touchX <= cropX + previewWindow.scale + 20 &&
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
-			touchY <= cropY + cropH + previewWindow.scale + 20)
-		{
+			touchY <= cropY + cropH + previewWindow.scale + 20) {
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
 			cropRect.offsetY = 0;
 			cropRect.vertex = 2;
 			cropRect.dragging = true;
-		}
-		else if(isCropping == true &&
+		} else if (isCropping == true &&
 			touchX >= cropX + cropW - previewWindow.scale - 20 &&
 			touchX <= cropX + cropW + previewWindow.scale + 20 &&
 			touchY >= cropY + cropH - previewWindow.scale - 20 &&
-			touchY <= cropY + cropH + previewWindow.scale + 20)
-		{
+			touchY <= cropY + cropH + previewWindow.scale + 20) {
 			cropRect.lastX = (touchX - previewWindow.offsetX) / previewWindow.scale;
 			cropRect.lastY = (touchY - previewWindow.offsetY) / previewWindow.scale;
 			cropRect.offsetX = 0;
 			cropRect.offsetY = 0;
 			cropRect.vertex = 3;
 			cropRect.dragging = true;
-		}
 		// Other grabbing (panning)
-		else
-		{
+		} else {
 			press(e.touches[0].clientX, e.touches[0].clientY);
 		}
-	}
-	else if(e.touches.length == 2)
-	{
+	} else if (e.touches.length == 2) {
 		cropRect.dragging = false;
 		mobileStartZoom(e.touches[0], e.touches[1]);
 	}
 }, {passive: false});
-canvas.addEventListener('touchmove', function(e)
-{
+canvas.addEventListener("touchmove", function(e) {
 	e.preventDefault();
-	if(e.touches.length == 1)
-	{
+	if (e.touches.length == 1) {
 		// Vertex grabbing
-		if(cropRect.dragging == true)
-		{
+		if (cropRect.dragging == true) {
 			const rect = canvas.getBoundingClientRect();
 			const touchX = e.touches[0].clientX - rect.left;
 			const touchY = e.touches[0].clientY - rect.top;
@@ -676,8 +604,7 @@ canvas.addEventListener('touchmove', function(e)
 			let dx = newX - cropRect.lastX;
 			let dy = newY - cropRect.lastY;
 	
-			switch(cropRect.vertex)
-			{
+			switch (cropRect.vertex) {
 				case 0:
 					cropRect.x += dx;
 					cropRect.y += dy;
@@ -704,24 +631,18 @@ canvas.addEventListener('touchmove', function(e)
 			cropRect.lastY = newY;
 	
 			draw();
-		}
 		// Maybe other grabbing (panning)
-		else
-		{
+		} else {
 			move(e.touches[0].clientX, e.touches[0].clientY);
 		}
-	}
-	else if(e.touches.length == 2)
-	{
+	} else if (e.touches.length == 2) {
 		mobileZoom(e.touches[0], e.touches[1]);
 	}
 }, {passive: false});
-canvas.addEventListener('touchend', ()=>
-{
+canvas.addEventListener("touchend", ()=> {
 	mobileEnd();
 }, {passive: false});
-canvas.addEventListener('touchcancel', ()=>
-{
+canvas.addEventListener("touchcancel", ()=> {
 	mobileEnd();
 }, {passive: false});
 
@@ -732,140 +653,120 @@ canvas.addEventListener('touchcancel', ()=>
 // -------------------- OTHER LISTENERS --------------------
 
 // Enable highdpi render
-_c_highdpi.addEventListener('change', (e) =>
-{
-	if(e.target.checked)
-	{
+_c_highdpi.addEventListener("change", (e) => {
+	if (e.target.checked) {
 		CONST_DPI = 288;
-	}
-	else
-	{
+	} else {
 		CONST_DPI = 144;
 	}
 
 	// Force reupload, pixel data is up/down-scaled
 	resetConsole();
-	config_container.classList.add('hidden');
+	config_container.classList.add("hidden");
 });
 
 // View preview
-_c_preview_view.addEventListener('click', function()
-{
-	preview_container.classList.toggle('hidden');
-	main.classList.toggle('blurred');
-	bottom_info.classList.toggle('blurred');
+_c_preview_view.addEventListener("click", function() {
+	preview_container.classList.toggle("hidden");
+	main.classList.toggle("blurred");
+	bottom_info.classList.toggle("blurred");
 });
 
 // Hide preview
-_c_preview_hide.addEventListener('click', function()
-{
-	if(isCropping == true) return;
+_c_preview_hide.addEventListener("click", function() {
+	if (isCropping == true) return;
 	saveCurrentCrop(vCanvas);
-	preview_container.classList.toggle('hidden');
-	main.classList.toggle('blurred');
-	bottom_info.classList.toggle('blurred');
+	preview_container.classList.toggle("hidden");
+	main.classList.toggle("blurred");
+	bottom_info.classList.toggle("blurred");
 });
 
 // Multipage previous page
-multipage_prev.addEventListener('click', async function()
-{
-	if(isCropping == true) return;
-	if(pageHelp.current != 1 && !renderInProgress)
-	{
+multipage_prev.addEventListener("click", async function() {
+	if (isCropping == true) return;
+	if (pageHelp.current != 1 && !renderInProgress) {
 		await renderMoveWrap(-1);
 	}
 });
 
 // Multipage next page
-multipage_next.addEventListener('click', async function()
-{
-	if(isCropping == true) return;
-	if(pageHelp.current != pageHelp.total && !renderInProgress)
-	{
+multipage_next.addEventListener("click", async function() {
+	if (isCropping == true) return;
+	if (pageHelp.current != pageHelp.total && !renderInProgress) {
 		await renderMoveWrap(1);
 	}
 });
 
 // Wipe all pages
-_c_wipe_pages.addEventListener('click', ()=>
-{
-	if(isCropping == true) return;
-	for(let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 1;
+_c_wipe_pages.addEventListener("click", ()=> {
+	if (isCropping == true) return;
+	for (let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 1;
 
 	draw();
 })
 
 // Restore deletions
-_c_restore_pages.addEventListener('click', ()=>
-{
-	if(isCropping == true) return;
-	for(let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 0;
+_c_restore_pages.addEventListener("click", ()=> {
+	if (isCropping == true) return;
+	for (let i = 1; i <= pageHelp.total; i++) pageHelp.delete[i - 1] = 0;
 
 	draw();
 })
 
 // Delete current page
-_c_delete_page.addEventListener('click', ()=>
-{
-	if(isCropping == true) return;
+_c_delete_page.addEventListener("click", ()=> {
+	if (isCropping == true) return;
 	pageHelp.delete[pageHelp.current - 1] = pageHelp.delete[pageHelp.current - 1] == 0 ? 1 : 0;
 
 	draw();
 })
 
 // Disable other functionality while cropping (why not)
-function hideWhenCropping()
-{
-	_c_preview_hide.classList.toggle('notallowed');
-	multipage_prev.classList.toggle('notallowed');
-	multipage_next.classList.toggle('notallowed');
-	_c_wipe_pages.classList.toggle('notallowed');
-	_c_delete_page.classList.toggle('notallowed');
-	_c_restore_pages.classList.toggle('notallowed');
-	_c_rotate_page.classList.toggle('notallowed');
-	_c_move_page_left.classList.toggle('notallowed');
-	_c_move_page_right.classList.toggle('notallowed');
+function hideWhenCropping() {
+	_c_preview_hide.classList.toggle("notallowed");
+	multipage_prev.classList.toggle("notallowed");
+	multipage_next.classList.toggle("notallowed");
+	_c_wipe_pages.classList.toggle("notallowed");
+	_c_delete_page.classList.toggle("notallowed");
+	_c_restore_pages.classList.toggle("notallowed");
+	_c_rotate_page.classList.toggle("notallowed");
+	_c_move_page_left.classList.toggle("notallowed");
+	_c_move_page_right.classList.toggle("notallowed");
 }
 
 // Toggle cropping
-_c_crop_page.addEventListener('click', ()=>
-{
+_c_crop_page.addEventListener("click", ()=> {
 	// Dont start cropping when page is deleted
-	if(pageHelp.delete[pageHelp.current - 1] == 1) return;
+	if (pageHelp.delete[pageHelp.current - 1] == 1) return;
 	// Toggle
 	isCropping = isCropping == true ? false : true;
-	_c_crop_page.classList.toggle('bg-gray');
-	canvas.classList.toggle('crosshair');
+	_c_crop_page.classList.toggle("bg-gray");
+	canvas.classList.toggle("crosshair");
 	hideWhenCropping()
 	// Redraw
 	draw();
 })
 
 // Rotate current page
-_c_rotate_page.addEventListener('click', ()=>
-{
-	if(isCropping == true) return;
+_c_rotate_page.addEventListener("click", ()=> {
+	if (isCropping == true) return;
 	pageHelp.rotate[pageHelp.current - 1] = (pageHelp.rotate[pageHelp.current - 1] + 1) % 4;
 
 	draw();
 })
 
 // Move page left
-_c_move_page_left.addEventListener('click', async function()
-{
-	if(isCropping == true) return;
-	if(pageHelp.current - 1 != 0 && !renderInProgress)
-	{
+_c_move_page_left.addEventListener("click", async function() {
+	if (isCropping == true) return;
+	if (pageHelp.current - 1 != 0 && !renderInProgress) {
 		await renderSwapWrap(pageHelp.current - 1, -1);
 	}
 });
 
 // Move page right
-_c_move_page_right.addEventListener('click', async function()
-{
-	if(isCropping == true) return;
-	if(pageHelp.current - 1 != pageHelp.total - 1 && !renderInProgress)
-	{
+_c_move_page_right.addEventListener("click", async function() {
+	if (isCropping == true) return;
+	if (pageHelp.current - 1 != pageHelp.total - 1 && !renderInProgress) {
 		await renderSwapWrap(pageHelp.current - 1, 1);
 	}
 });
@@ -877,49 +778,42 @@ _c_move_page_right.addEventListener('click', async function()
 // -------------------- LOGIC ------------------------------
 
 // Drag and drop overlay
-_input.addEventListener('drop', (e) =>
-{
+_input.addEventListener("drop", (e) => {
 	e.preventDefault();
 	const files = e.dataTransfer.files;
 
 	// Validate the drop
-	if(!files || files.length === 0)
-	{
+	if (!files || files.length === 0) {
 		return;
-	}
-	else if(files.length >= 20)
-	{
+	} else if (files.length >= 20) {
 		printConsole("Error: Received over 20 files.\n");
 		return;
 	}
 
 	// Transfer files to normal flow
 	const dataTransfer = new DataTransfer();
-	for(let i = 0; i < files.length; i++)
-	{
-		if(files[i].type == "application/pdf")
-		{
+	for (let i = 0; i < files.length; i++) {
+		if (files[i].type == "application/pdf") {
 			dataTransfer.items.add(files[i]);
 		}
 	}
 	_input.files = dataTransfer.files;
-	_input.dispatchEvent(new Event('change'));
+	_input.dispatchEvent(new Event("change"));
 });
 
 // Input
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
-_input.onchange = async (e) =>
-{
+pdfjsLib.GlobalWorkerOptions.workerSrc = "libs/pdf.worker.min.js";
+_input.onchange = async (e) => {
 	// Hide
-	preview_container.classList.add('hidden');
-	config_container.classList.add('hidden');
-	_c_wipe_pages.classList.add('hidden');
-	_c_restore_pages.classList.add('hidden');
-	_c_delete_page.classList.add('hidden');
-	_c_move_page_left.classList.add('hidden');
-	_c_move_page_right.classList.add('hidden');
-	_c_split_label.classList.add('hidden');
-	multipage_help.classList.add('hidden');
+	preview_container.classList.add("hidden");
+	config_container.classList.add("hidden");
+	_c_wipe_pages.classList.add("hidden");
+	_c_restore_pages.classList.add("hidden");
+	_c_delete_page.classList.add("hidden");
+	_c_move_page_left.classList.add("hidden");
+	_c_move_page_right.classList.add("hidden");
+	_c_split_label.classList.add("hidden");
+	multipage_help.classList.add("hidden");
 
 	// Reset (starting all over)
 	resetConsole();
@@ -930,23 +824,18 @@ _input.onchange = async (e) =>
 
 	// Get files
 	const files = e.target.files;
-	if(!files || files.length === 0)
-	{
+	if (!files || files.length === 0) {
 		printConsole("Error: Received 0 files.\n");
 		return;
-	}
-	else if(files.length >= 20)
-	{
+	} else if (files.length >= 20) {
 		printConsole("Error: Received over 20 files.\n");
 		return;
 	}
 
 	// Initialize
-	for(let i = 0; i < files.length; i++)
-	{
+	for (let i = 0; i < files.length; i++) {
 		// Assert format
-		if(files[i].type != "application/pdf")
-		{
+		if (files[i].type != "application/pdf") {
 			printConsole("Error: Received a non-PDF file.\n");
 			return;
 		}
@@ -956,8 +845,7 @@ _input.onchange = async (e) =>
 		const fileBuffer2 = fileBuffer.slice(0);
 		const PDFDocRender = await pdfjsLib.getDocument({data: fileBuffer}).promise;
 		const PDFDocProcess = await PDFDocument.load(fileBuffer2);
-		for(let j = 0; j < PDFDocRender.numPages; j++)
-		{
+		for (let j = 0; j < PDFDocRender.numPages; j++) {
 			const temp = await PDFDocument.create();
 			const [temp2] = await temp.copyPages(PDFDocProcess, [j]);
 			temp.addPage(temp2);
@@ -980,40 +868,34 @@ _input.onchange = async (e) =>
 	draw();
 
 	// Enable UI
-	config_container.classList.remove('hidden');
-	if(pageHelp.total > 1)
-	{
-		_c_move_page_left.classList.remove('hidden');
-		_c_move_page_right.classList.remove('hidden');
-		_c_restore_pages.classList.remove('hidden');
-		_c_wipe_pages.classList.remove('hidden');
-		_c_delete_page.classList.remove('hidden');
-		multipage_help.classList.remove('hidden');
-		_c_split_label.classList.remove('hidden');
+	config_container.classList.remove("hidden");
+	if (pageHelp.total > 1) {
+		_c_move_page_left.classList.remove("hidden");
+		_c_move_page_right.classList.remove("hidden");
+		_c_restore_pages.classList.remove("hidden");
+		_c_wipe_pages.classList.remove("hidden");
+		_c_delete_page.classList.remove("hidden");
+		multipage_help.classList.remove("hidden");
+		_c_split_label.classList.remove("hidden");
 		updatePageCount();
 	}
 }
 
 // Util
-function toPt(px)
-{
+function toPt(px) {
 	return px * (72/CONST_DPI);
 }
 
 // Convert
-async function action(split)
-{
+async function action(split) {
 	// Abort nonsense
 	let d = 0;
-	for(let i = 0; i < pageHelp.total; i++)
-	{
-		if(pageHelp.delete[i] != 0)
-		{
+	for (let i = 0; i < pageHelp.total; i++) {
+		if (pageHelp.delete[i] != 0) {
 			d++;
 		}
 	}
-	if(d == pageHelp.total)
-	{
+	if (d == pageHelp.total) {
 		printConsole("Error: Aborting download of zero pages.\n");
 		return;
 	}
@@ -1022,14 +904,12 @@ async function action(split)
 	const newDoc = await PDFDocument.create();
 
 	// Loop throgh all pages and rotate and copy
-	for(let i = 0; i < pageHelp.total; i++)
-	{
+	for (let i = 0; i < pageHelp.total; i++) {
 		const doc = await PDFDocument.load(PDFPagesProcess[i]);
 		const page = (doc.getPages())[0];
 
 		// Nonzero crop
-		if(pageHelp.crops[i].w != 0 && pageHelp.crops[i].h != 0)
-		{
+		if (pageHelp.crops[i].w != 0 && pageHelp.crops[i].h != 0) {
 			const crop = pageHelp.crops[i];
 			const width = pageHelp.sizes[i].pw;
 			const height = pageHelp.sizes[i].ph;
@@ -1038,20 +918,17 @@ async function action(split)
 			const c = Math.round(crop.w);
 			const d = Math.round(crop.h);
 			const prevCrop = page.getCropBox();
-			if(a != 0 || b != 0 || c != width || d != height)
-			{
+			if (a != 0 || b != 0 || c != width || d != height) {
 				page.setCropBox(toPt(a) + prevCrop.x, toPt(b) + prevCrop.y, toPt(c), toPt(d));
 				printConsole("Done: Page " + (i + 1) + " cropped with params (" + (toPt(a)) + ", " + (toPt(b)) + ", " + (toPt(c)) + ", " + (toPt(d)) + ").\n");
 			}
-			if(prevCrop.x != 0 || prevCrop.y != 0 || Math.round(prevCrop.width) != toPt(c) || Math.round(prevCrop.height) != toPt(d))
-			{
+			if (prevCrop.x != 0 || prevCrop.y != 0 || Math.round(prevCrop.width) != toPt(c) || Math.round(prevCrop.height) != toPt(d)) {
 				printConsole("Info: Page " + (i + 1) + " had a cropbox prior to addition.\n");
 			}
 		}
 
 		// Nonzero rotation
-		if(pageHelp.rotate[i] != 0)
-		{
+		if (pageHelp.rotate[i] != 0) {
 			page.setRotation(PDFLib.degrees(page.getRotation().angle + (pageHelp.rotate[i]) * 90));
 			printConsole("Done: Page " + (i + 1) + " rotated with angle " + (pageHelp.rotate[i] * 90) + "° clockwise.\n");
 		}
@@ -1061,16 +938,13 @@ async function action(split)
 		newDoc.addPage(copy);
 	}
 
-	if(split)
-	{
+	if (split) {
 		const zip = new JSZip();
 
 		// Loop through all pages and make a zip
-		for(let i = pageHelp.total - 1; i >= 0; i--)
-		{
+		for (let i = pageHelp.total - 1; i >= 0; i--) {
 			// Add
-			if(pageHelp.delete[i] == 0)
-			{
+			if (pageHelp.delete[i] == 0) {
 				// Copy
 				const singlePage = await PDFDocument.create();
 				const [copy] = await singlePage.copyPages(newDoc, [i]);
@@ -1078,16 +952,16 @@ async function action(split)
 		
 				// Download
 				const pageBytes = await singlePage.save();
-				zip.file('page-' + (i + 1) + '.pdf', pageBytes);
+				zip.file("page-" + (i + 1) + ".pdf", pageBytes);
 			}
 		}
 		
 		// Download
-		const blob = await zip.generateAsync({type: 'blob'});
+		const blob = await zip.generateAsync({type: "blob"});
 		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
+		const link = document.createElement("a");
 		link.href = url;
-		link.download = 'ConvertedPDF.zip';
+		link.download = "ConvertedPDF.zip";
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -1096,10 +970,8 @@ async function action(split)
 	}
 
 	// Loop through all pages and delete
-	for(let i = pageHelp.total - 1; i >= 0; i--)
-	{
-		if(pageHelp.delete[i] == 1)
-		{
+	for (let i = pageHelp.total - 1; i >= 0; i--) {
+		if (pageHelp.delete[i] == 1) {
 			newDoc.removePage(i);
 			printConsole("Done: Page " + (i + 1) + " deleted.\n");
 		}
@@ -1109,31 +981,26 @@ async function action(split)
 	newBytes = await newDoc.save();
 
 	// Make bob
-	const blob = new Blob([newBytes], {type: 'application/pdf'});
+	const blob = new Blob([newBytes], {type: "application/pdf"});
 	const url = URL.createObjectURL(blob);
-	const link = document.createElement('a');
+	const link = document.createElement("a");
 	link.href = url;
-	link.download = 'Converted.pdf';
+	link.download = "Converted.pdf";
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
 	URL.revokeObjectURL(url);
 }
 
-_c_split.addEventListener('change', (e) =>
-{
-	if(e.target.checked)
-	{
+_c_split.addEventListener("change", (e) => {
+	if (e.target.checked) {
 		split = true;
-	}
-	else
-	{
+	} else {
 		split = false;
 	}
 });
 
-action_button.addEventListener('click', async function()
-{
+action_button.addEventListener("click", async function() {
 	resetConsole();
 
 	action(split);
@@ -1142,7 +1009,6 @@ action_button.addEventListener('click', async function()
 // ---------------------------------------------------------
 
 // hack
-if(window.innerHeight > window.innerWidth)
-{
-	document.documentElement.classList.add('mobile');
+if (window.innerHeight > window.innerWidth) {
+	document.documentElement.classList.add("mobile");
 }

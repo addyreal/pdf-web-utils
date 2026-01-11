@@ -82,8 +82,7 @@ function resetPageHelp() {
 	};
 }
 function resetPreviewWindow() {
-	previewWindow =
- 
+	previewWindow = {
 		scale: 1,
 		lastTouchesDist: 0,
 		lastX: 0,
